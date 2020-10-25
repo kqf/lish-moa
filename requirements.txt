@@ -1,3 +1,6 @@
 setuptools
 pytest
 kaggle
+pandas
+scikit-learn
+category_encoders
