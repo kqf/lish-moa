@@ -1,0 +1,17 @@
+*.csv
+*.pkl
+*.json
+*.hd5
+*.gz
+.cachedir
+*.zip
+
+*.png
+
+*.egg*
+*.pyc
+*.ipynb
+
+.DS_Store
+.python-version
+plan.md
