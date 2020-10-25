@@ -11,5 +11,8 @@ submit:
 	sleep 2
 	kaggle competitions submissions -c $(competition)
 
-%.csv:
+%.csv: data/$(competition).zip
+	unzip $< -d data/
+
+data/$(competition).zip:
 	kaggle competitions download -c $(competition) -p data/
