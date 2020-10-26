@@ -4,3 +4,4 @@ kaggle
 pandas
 scikit-learn
 category_encoders
+xgboost
