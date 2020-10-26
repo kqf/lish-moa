@@ -32,7 +32,7 @@ def build_model():
     }
 
     model = make_pipeline(
-        CountEncoder(cols=[0, 2]),
+        CountEncoder(cols=[0, 2], return_df=False),
         MultiOutputClassifier(xgb.XGBClassifier(**params)),
     )
 
