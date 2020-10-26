@@ -15,7 +15,6 @@ from sklearn.linear_model import SGDClassifier
 
 SEED = 42
 NFOLDS = 5
-DATA_DIR = "/kaggle/input/lish-moa/"
 np.random.seed(SEED)
 
 
