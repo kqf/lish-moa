@@ -46,23 +46,11 @@ def read_data(path, ignore_col="sig_id"):
     return df
 
 
-def main():
-    train = read_data("data/train_features.csv")
-    targets = read_data("data/train_targets_scored.csv")
-
-    test = read_data("data/test_features.csv")
-    sub = read_data("data/sample_submission.csv")
-
-    # drop id col
-    X = train.to_numpy()
-    X_test = test.to_numpy()
-    y = targets.to_numpy()
-
-    clf = build_model()
-
+def cros_val_fit(clf, X, y, X_test, kf):
     oof_preds = np.zeros(y.shape)
-    test_preds = np.zeros((test.shape[0], y.shape[1]))
+    test_preds = np.zeros(X_test.shape[0], y.shape[1])
     oof_losses = []
+
     kf = KFold(n_splits=NFOLDS)
     for fn, (trn_idx, val_idx) in enumerate(kf.split(X, y)):
         print("Starting fold: ", fn)
@@ -84,6 +72,24 @@ def main():
         preds = clf.predict_proba(X_test)
         preds = np.array(preds)[:, :, 1].T  # take the positive class
         test_preds += preds / NFOLDS
+
+    return oof_losses,
+
+
+def main():
+    train = read_data("data/train_features.csv")
+    targets = read_data("data/train_targets_scored.csv")
+
+    test = read_data("data/test_features.csv")
+    sub = read_data("data/sample_submission.csv")
+
+    # drop id col
+    X = train.to_numpy()
+    X_test = test.to_numpy()
+    y = targets.to_numpy()
+    clf = build_model()
+
+    oof_losses, oof_preds, test_preds = cros_val_fit(clf, X, y, X_test)
 
     print(oof_losses)
     print("Mean OOF loss across folds", np.mean(oof_losses))
