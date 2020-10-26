@@ -46,13 +46,14 @@ def read_data(path, ignore_col="sig_id"):
     return df
 
 
-def cros_val_fit(clf, X, y, X_test, kf):
+def cros_val_fit(clf, X, y, X_test, cv=None):
+    cv = cv or KFold(5)
+
     oof_preds = np.zeros(y.shape)
-    test_preds = np.zeros(X_test.shape[0], y.shape[1])
+    test_preds = np.zeros((X_test.shape[0], y.shape[1]))
     oof_losses = []
 
-    kf = KFold(n_splits=NFOLDS)
-    for fn, (trn_idx, val_idx) in enumerate(kf.split(X, y)):
+    for fn, (trn_idx, val_idx) in enumerate(cv.split(X, y)):
         print("Starting fold: ", fn)
         X_train, X_val = X[trn_idx], X[val_idx]
         y_train, y_val = y[trn_idx], y[val_idx]
@@ -89,7 +90,8 @@ def main():
     y = targets.to_numpy()
     clf = build_model()
 
-    oof_losses, oof_preds, test_preds = cros_val_fit(clf, X, y, X_test)
+    cv = KFold(n_splits=NFOLDS)
+    oof_losses, oof_preds, test_preds = cros_val_fit(clf, X, y, X_test, cv=cv)
 
     print(oof_losses)
     print("Mean OOF loss across folds", np.mean(oof_losses))
