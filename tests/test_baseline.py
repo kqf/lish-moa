@@ -1,4 +1,4 @@
-from models.baseline import build_model
+from models.baseline import build_model, cros_val_fit
 
 
 def test_model(xy):
@@ -6,3 +6,4 @@ def test_model(xy):
 
     model = build_model()
     model.fit(X.to_numpy(), y.to_numpy())
+    cros_val_fit(model, X.to_numpy(), y.to_numpy(), X.to_numpy())

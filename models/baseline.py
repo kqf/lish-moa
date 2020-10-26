@@ -3,6 +3,7 @@
 
 import numpy as np
 import pandas as pd
+import xgboost as xgb
 
 from sklearn.model_selection import KFold
 from category_encoders import CountEncoder
@@ -10,7 +11,6 @@ from sklearn.pipeline import make_pipeline
 from sklearn.metrics import log_loss
 
 from sklearn.multioutput import MultiOutputClassifier
-from sklearn.linear_model import SGDClassifier
 
 
 SEED = 42
@@ -20,21 +20,20 @@ np.random.seed(SEED)
 
 def build_model():
     # Former xgboost parameters
-    # params = {
-    #     "tree_method": "gpu_hist",
-    #     "colsample_bytree": 0.6522,
-    #     "gamma": 3.6975,
-    #     "learning_rate": 0.0503,
-    #     "max_delta_step": 2.0706,
-    #     "max_depth": 10,
-    #     "min_child_weight": 31.5800,
-    #     "n_estimators": 166,
-    #     "subsample": 0.8639
-    # }
+    params = {
+        "colsample_bytree": 0.6522,
+        "gamma": 3.6975,
+        "learning_rate": 0.0503,
+        "max_delta_step": 2.0706,
+        "max_depth": 10,
+        "min_child_weight": 31.5800,
+        "n_estimators": 166,
+        "subsample": 0.8639
+    }
 
     model = make_pipeline(
-        CountEncoder(cols=[0, 2]),
-        MultiOutputClassifier(SGDClassifier()),
+        CountEncoder(cols=[0, 2], return_df=False),
+        MultiOutputClassifier(xgb.XGBClassifier(**params)),
     )
 
     return model
@@ -70,9 +69,10 @@ def cros_val_fit(clf, X, y, X_test, cv=None):
 
         loss = log_loss(np.ravel(y_val), np.ravel(val_preds))
         oof_losses.append(loss)
-        preds = clf.predict_proba(X_test)
-        preds = np.array(preds)[:, :, 1].T  # take the positive class
-        test_preds += preds / NFOLDS
+
+        # preds = clf.predict_proba(X_test)
+        # preds = np.array(preds)[:, :, 1].T  # take the positive class
+        # test_preds += preds / NFOLDS
 
     return oof_losses,
 
