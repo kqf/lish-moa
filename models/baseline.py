@@ -21,6 +21,7 @@ np.random.seed(SEED)
 def build_model():
     # Former xgboost parameters
     params = {
+        "tree_method": "gpu_hist",
         "colsample_bytree": 0.6522,
         "gamma": 3.6975,
         "learning_rate": 0.0503,
