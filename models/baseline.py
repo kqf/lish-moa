@@ -1,6 +1,7 @@
 # Inspired by:
 # https://www.kaggle.com/fchmiel/xgboost-baseline-multilabel-classification
 
+import os
 import numpy as np
 import pandas as pd
 import xgboost as xgb
@@ -18,6 +19,16 @@ NFOLDS = 5
 np.random.seed(SEED)
 
 
+def has_gpu():
+    """
+        Check NVIDIA with nvidia-smi command
+        Returning code 0 if no error, it means NVIDIA is installed
+        Other codes mean not installed
+    """
+    code = os.system('nvidia-smi > /dev/null 2>&1')
+    return code == 0
+
+
 def build_model():
     # Former xgboost parameters
     params = {
@@ -30,6 +41,9 @@ def build_model():
         "n_estimators": 166,
         "subsample": 0.8639
     }
+
+    if has_gpu():
+        params["tree_method"] = "gpu_hist"
 
     model = make_pipeline(
         CountEncoder(cols=[0, 2], return_df=False),
