@@ -72,9 +72,9 @@ def cros_val_fit(clf, X, y, X_test, cv=None):
 
         preds = clf.predict_proba(X_test)
         preds = np.array(preds)[:, :, 1].T  # take the positive class
-        test_preds += preds / NFOLDS
+        test_preds += preds / cv.n_splits
 
-    return oof_losses,
+    return oof_losses, oof_preds, test_preds
 
 
 def main():
