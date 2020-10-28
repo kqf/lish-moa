@@ -25,7 +25,7 @@ def has_gpu():
         Returning code 0 if no error, it means NVIDIA is installed
         Other codes mean not installed
     """
-    code = os.system('nvidia-smi')
+    code = os.system('nvidia-smi > /dev/null 2>&1')
     return code == 0
 
 
