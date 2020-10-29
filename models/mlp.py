@@ -3,12 +3,27 @@ import skorch
 import torch
 
 from category_encoders import CountEncoder
-from sklearn.pipeline import make_pipeline
 from skorch.toy import MLPModule
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+
+class DebugTransformer:
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        return X.to_numpy()
 
 
 def build_preprocessor():
-    return CountEncoder(cols=[0, 2], return_df=False)
+    ce = make_pipeline(
+        DebugTransformer(),
+        CountEncoder(cols=(0, 2), return_df=False),
+        StandardScaler(),
+    )
+
+    return ce
 
 
 def build_model():
