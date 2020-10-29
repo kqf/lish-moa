@@ -1,7 +1,9 @@
 import pytest
+import numpy as np
 from models.mlp import build_model, build_preprocessor
 
 
+@pytest.mark.skip
 def test_preprocessor(xy):
     X, y = xy
     xtransformed = build_preprocessor().fit_transform(X, y)
@@ -11,9 +13,8 @@ def test_preprocessor(xy):
     assert n_featuers == 875
 
 
-@pytest.mark.skip
 def test_model(xy):
     X, y = xy
 
     model = build_model()
-    model.fit(X.to_numpy(), y.to_numpy())
+    model.fit(X, y.to_numpy().astype(np.float32))

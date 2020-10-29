@@ -1,6 +1,7 @@
-import pandas as pd
-import skorch
 import torch
+import skorch
+import numpy as np
+import pandas as pd
 
 from category_encoders import CountEncoder
 from skorch.toy import MLPModule
@@ -8,7 +9,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 
-class DebugTransformer:
+class ConvertTransformer:
     def fit(self, X, y=None):
         return self
 
@@ -16,11 +17,20 @@ class DebugTransformer:
         return X.to_numpy()
 
 
+class TypeConversion:
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        return X.astype(np.float32)
+
+
 def build_preprocessor():
     ce = make_pipeline(
-        DebugTransformer(),
+        ConvertTransformer(),
         CountEncoder(cols=(0, 2), return_df=False),
         StandardScaler(),
+        TypeConversion(),
     )
 
     return ce
@@ -29,14 +39,14 @@ def build_preprocessor():
 def build_model():
     classifier = skorch.NeuralNet(
         module=MLPModule,
-        module__input_units=20,
-        module__output_units=2,
+        module__input_units=875,
+        module__output_units=206,
         optimizer=torch.optim.Adam,
-        optimizer__lr=0.002,
-        criterion=torch.nn.CrossEntropyLoss,
+        criterion=torch.nn.BCEWithLogitsLoss,
         max_epochs=5,
         batch_size=128,
         device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+        train_split=None,
     )
 
     model = make_pipeline(
