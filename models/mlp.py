@@ -7,6 +7,10 @@ from sklearn.pipeline import make_pipeline
 from skorch.toy import MLPModule
 
 
+def build_preprocessor():
+    return CountEncoder(cols=[0, 2], return_df=False)
+
+
 def build_model():
     classifier = skorch.NeuralNet(
         module=MLPModule,
@@ -21,7 +25,7 @@ def build_model():
     )
 
     model = make_pipeline(
-        CountEncoder(cols=[0, 2], return_df=False),
+        build_preprocessor(),
         classifier,
     )
 
