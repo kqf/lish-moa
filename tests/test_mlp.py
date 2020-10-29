@@ -5,4 +5,4 @@ def test_model(xy):
     X, y = xy
 
     model = build_model()
-    model.fit(X, y)
+    model.fit(X.to_numpy(), y.to_numpy())
