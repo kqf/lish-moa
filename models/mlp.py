@@ -61,6 +61,9 @@ def build_model():
         batch_size=128,
         device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
         train_split=None,
+        callbacks=[
+            DynamicVariablesSetter(),
+        ],
     )
 
     model = make_pipeline(
