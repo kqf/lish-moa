@@ -5,7 +5,7 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'lish-moa=models.baseine:main',
+            'lish-moa=mlp.baseine:main',
         ],
     },
 )
