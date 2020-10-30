@@ -36,6 +36,20 @@ def build_preprocessor():
     return ce
 
 
+class DynamicVariablesSetter(skorch.callbacks.Callback):
+    def on_train_begin(self, net, X, y):
+        net.set_params(module__input_units=X.shape[0])
+        net.set_params(module__output_units=y.shape[0])
+
+        n_pars = self.count_parameters(net.module_)
+        print(f'The train data is of {X.shape}')
+        print(f'The model has {n_pars:,} trainable parameters')
+
+    @staticmethod
+    def count_parameters(model):
+        return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
 def build_model():
     classifier = skorch.NeuralNet(
         module=MLPModule,
