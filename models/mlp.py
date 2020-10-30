@@ -38,8 +38,8 @@ def build_preprocessor():
 
 class DynamicVariablesSetter(skorch.callbacks.Callback):
     def on_train_begin(self, net, X, y):
-        net.set_params(module__input_units=X.shape[0])
-        net.set_params(module__output_units=y.shape[0])
+        net.set_params(module__input_units=X.shape[1])
+        net.set_params(module__output_units=y.shape[1])
 
         n_pars = self.count_parameters(net.module_)
         print(f'The train data is of {X.shape}')
