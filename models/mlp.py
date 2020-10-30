@@ -42,7 +42,8 @@ class DynamicVariablesSetter(skorch.callbacks.Callback):
         net.set_params(module__output_units=y.shape[1])
 
         n_pars = self.count_parameters(net.module_)
-        print(f'The train data is of {X.shape}')
+        print(f'The train data is of {X.shape} shape')
+        print(f'The train labels are of {y.shape} shape')
         print(f'The model has {n_pars:,} trainable parameters')
 
     @staticmethod
@@ -88,10 +89,10 @@ def main():
     sub = read_data("data/sample_submission.csv")
 
     clf = build_model()
-    clf.fit(X, y)
+    clf.fit(X, y.to_numpy().astype(np.float32))
 
     # create the submission file
-    sub.iloc[:, 1:] = clf.predict_proba(X_test)
+    sub.iloc[:, ] = clf.predict_proba(X_test)[:, 1, :]
     sub.to_csv("submission.csv", index=False)
 
 
