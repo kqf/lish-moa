@@ -37,8 +37,10 @@ def build_preprocessor():
 
 class DynamicVariablesSetter(skorch.callbacks.Callback):
     def on_train_begin(self, net, X, y):
-        net.set_params(module__input_units=X.shape[1])
-        net.set_params(module__output_units=y.shape[1])
+        net.set_params(
+            module__input_units=X.shape[1],
+            module__output_units=y.shape[1]
+        )
 
         n_pars = self.count_parameters(net.module_)
         print(f'The train data is of {X.shape} shape')
@@ -55,7 +57,8 @@ def cv_fit(clf, X, y, X_test, cv=None, n_splits=5):
 
     test_preds = np.zeros((X_test.shape[0], y.shape[1]))
 
-    losses = []
+    losses_train = []
+    losses_valid = []
     estimators = []
     for fn, (trn_idx, val_idx) in enumerate(cv.split(X, y)):
         print("Starting fold: ", fn)
@@ -70,27 +73,35 @@ def cv_fit(clf, X, y, X_test, cv=None, n_splits=5):
         y_train = y_train[~ctl_mask]
 
         estimators[-1].fit(X_train, y_train)
+
+        train_preds = estimators[-1].predict_proba(X_train)
+        train_preds = np.nan_to_num(train_preds[:, 1, :])  # positive class
+        loss = log_loss(y_train.reshape(-1), train_preds.reshape(-1))
+        losses_train.append(loss)
+
         val_preds = estimators[-1].predict_proba(X_val)
         val_preds = np.nan_to_num(val_preds[:, 1, :])  # positive class
-
         loss = log_loss(y_val.reshape(-1), val_preds.reshape(-1))
-        losses.append(loss)
+        losses_valid.append(loss)
 
         preds = estimators[-1].predict_proba(X_test)
         preds = np.nan_to_num(preds[:, 1, :])  # positive class
         test_preds += preds / n_splits
 
-    return estimators, np.array(losses), test_preds
+    return (
+        estimators,
+        np.array(losses_train),
+        np.array(losses_valid),
+        test_preds
+    )
 
 
 def build_model():
     classifier = skorch.NeuralNet(
         module=MLPModule,
-        module__input_units=875,
-        module__output_units=206,
         optimizer=torch.optim.Adam,
         criterion=torch.nn.BCEWithLogitsLoss,
-        max_epochs=1,
+        max_epochs=5,
         batch_size=128,
         device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
         train_split=None,
@@ -114,6 +125,9 @@ def read_data(path, ignore_col="sig_id", return_df=False):
     if return_df:
         return df
 
+    if df.shape[1] == 206:
+        return df.to_numpy().astype(np.float32)
+
     return df.to_numpy()
 
 
@@ -125,13 +139,11 @@ def main():
     sub = read_data("data/sample_submission.csv", return_df=True)
 
     clf = build_model()
-    clfs, losses, preds = cv_fit(
-        clf,
-        X,
-        y.astype(np.float32),
-        X_test,
-    )
-    print("CV losses {:.4f} +/- {:.4f}".format(losses.mean(), losses.std()))
+    clfs, losses_train, losses_valid, preds = cv_fit(clf, X, y, X_test)
+
+    msg = "CV losses {} {:.4f} +/- {:.4f}"
+    print(msg.format("train", losses_train.mean(), losses_train.std()))
+    print(msg.format("valid", losses_valid.mean(), losses_valid.std()))
 
     # create the submission file
     sub.iloc[:, ] = preds
