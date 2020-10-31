@@ -79,7 +79,7 @@ def cros_val_fit(clf, X, y, X_test, cv=None):
         clf.fit(X_train, y_train)
         val_preds = clf.predict_proba(X_val)  # list of preds per class
         val_preds = np.array(val_preds)[:, :, 1].T  # take the positive class
-        oof_preds[val_idx] = val_preds
+        oof_preds[val_idx] = np.nan_to_num(val_preds)
 
         loss = log_loss(np.ravel(y_val), np.ravel(val_preds))
         oof_losses.append(loss)
