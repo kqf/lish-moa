@@ -3,8 +3,8 @@ import skorch
 import numpy as np
 import pandas as pd
 
-from category_encoders import CountEncoder
 from skorch.toy import MLPModule
+from category_encoders import CountEncoder
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -28,7 +28,11 @@ class TypeConversion:
 def build_preprocessor():
     ce = make_pipeline(
         ConvertTransformer(),
-        CountEncoder(cols=(0, 2), return_df=False),
+        CountEncoder(
+            cols=(0, 2),
+            return_df=False,
+            min_group_size=1,  # Makes it possible to clone
+        ),
         StandardScaler(),
         TypeConversion(),
     )
