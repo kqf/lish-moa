@@ -137,7 +137,8 @@ def read_data(path, ignore_col="sig_id", return_df=False):
         file_path = Path("/kaggle/input/lish-moa/") / file_path.name
 
     df = pd.read_csv(file_path)
-    df.drop(columns=[ignore_col], inplace=True)
+    if ignore_col is not None:
+        df.drop(columns=[ignore_col], inplace=True)
 
     if return_df:
         return df
@@ -153,7 +154,8 @@ def main():
     y = read_data("data/train_targets_scored.csv")
 
     X_test = read_data("data/test_features.csv")
-    sub = read_data("data/sample_submission.csv", return_df=True)
+    sub = read_data("data/sample_submission.csv",
+                    ignore_col=None, return_df=True)
 
     clf = build_model()
     clfs, losses_train, losses_valid, preds = cv_fit(clf, X, y, X_test)
@@ -163,7 +165,7 @@ def main():
     print(msg.format("valid", losses_valid.mean(), losses_valid.std()))
 
     # create the submission file
-    sub.iloc[:, ] = preds
+    sub.iloc[:, 1:] = preds
     sub.to_csv("submission.csv", index=False)
 
 
