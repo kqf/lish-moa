@@ -39,7 +39,7 @@ def build_preprocessor():
     return ce
 
 
-def create_model(input_units, output_units, hidden_units=10, lr=10e-4):
+def create_model(input_units, output_units, hidden_units=10, lr=1e-3):
     model = Sequential()
     model.add(
         Dense(hidden_units, activation="relu", input_shape=(input_units,))
@@ -47,7 +47,14 @@ def create_model(input_units, output_units, hidden_units=10, lr=10e-4):
     model.add(Dense(output_units, activation="sigmoid"))
     model.compile(
         loss=["binary_crossentropy"],
-        optimizer=Adam(lr=lr),
+        optimizer=Adam(
+            lr=lr,
+            beta_1=0.9,
+            beta_2=0.999,
+            epsilon=1e-8,
+            amsgrad=False,
+            decay=0,
+        )
     )
     return model
 
