@@ -42,11 +42,10 @@ def build_preprocessor():
 def create_model(input_units, output_units):
     model = Sequential()
     model.add(Dense(64, activation="relu", input_shape=(input_units,)))
-    model.add(Dense(output_units, activation="relu"))
+    model.add(Dense(output_units, activation="sigmoid"))
     model.compile(
         loss=["binary_crossentropy"],
         optimizer=Adam(lr=10e-4),
-        metrics=["accuracy"]
     )
     return model
 
@@ -64,8 +63,8 @@ class DynamicKerasClassifier(KerasClassifier):
 def build_model():
     classifier = DynamicKerasClassifier(
         create_model,
-        batch_size=2000,
-        epochs=4,
+        batch_size=128,
+        epochs=5,
         validation_split=None,
         shuffle=True
     )
@@ -101,17 +100,17 @@ def cv_fit(clf, X, y, X_test, cv=None, n_splits=5):
         estimators[-1].fit(X_train, y_train)
 
         train_preds = estimators[-1].predict_proba(X_train)
-        train_preds = np.nan_to_num(train_preds[:, 1, :])  # positive class
+        train_preds = np.nan_to_num(train_preds)  # positive class
         loss = log_loss(y_train.reshape(-1), train_preds.reshape(-1))
         losses_train.append(loss)
 
         val_preds = estimators[-1].predict_proba(X_val)
-        val_preds = np.nan_to_num(val_preds[:, 1, :])  # positive class
+        val_preds = np.nan_to_num(val_preds)  # positive class
         loss = log_loss(y_val.reshape(-1), val_preds.reshape(-1))
         losses_valid.append(loss)
 
         preds = estimators[-1].predict_proba(X_test)
-        preds = np.nan_to_num(preds[:, 1, :])  # positive class
+        preds = np.nan_to_num(preds)  # positive class
         test_preds += preds / n_splits
 
     return (
