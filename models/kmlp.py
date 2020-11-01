@@ -39,7 +39,7 @@ def build_preprocessor():
     return ce
 
 
-def create_model(input_units, output_units, hidden_units=10, lr=1e-3):
+def create_model(input_units, output_units, hidden_units=512, lr=1e-3):
     model = Sequential()
     model.add(
         Dense(hidden_units, activation="relu", input_shape=(input_units,))
