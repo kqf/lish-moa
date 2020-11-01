@@ -8,3 +8,5 @@ xgboost
 skorch
 torch
 matplotlib
+keras
+tensorflow
