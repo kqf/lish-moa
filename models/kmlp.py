@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+from pathlib import Path
 from functools import partial
 
 from category_encoders import CountEncoder
@@ -131,7 +132,11 @@ def cv_fit(clf, X, y, X_test, cv=None, n_splits=5):
 
 
 def read_data(path, ignore_col="sig_id", return_df=False):
-    df = pd.read_csv(path)
+    file_path = Path(path)
+    if not file_path.is_file():
+        file_path = Path("/kaggle/input/lish-moa/") / file_path.name
+
+    df = pd.read_csv(file_path)
     df.drop(columns=[ignore_col], inplace=True)
 
     if return_df:
