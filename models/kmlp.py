@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from functools import partial
+
 from category_encoders import CountEncoder
 
 from sklearn.base import clone
@@ -37,23 +39,34 @@ def build_preprocessor():
     return ce
 
 
-def create_model(n_features=10, n_outputs=10):
+def create_model(input_units, output_units):
     model = Sequential()
-    model.add(Dense(10, activation="relu", input_shape=(None,)))
-    model.add(Dense(6, activation="relu"))
-    model.add(Dense(4, activation="relu"))
-    model.add(Dense(1, activation="sigmoid"))
-    model.compile(loss=["binary_crossentropy"],
-                  optimizer=Adam(lr=10e-4), metrics=["accuracy"])
+    model.add(Dense(64, activation="relu", input_shape=(input_units,)))
+    model.add(Dense(output_units, activation="relu"))
+    model.compile(
+        loss=["binary_crossentropy"],
+        optimizer=Adam(lr=10e-4),
+        metrics=["accuracy"]
+    )
     return model
 
 
+class DynamicKerasClassifier(KerasClassifier):
+    def fit(self, X, y, **kwargs):
+        self.build_fn = partial(
+            self.build_fn,
+            input_units=X.shape[1],
+            output_units=y.shape[1]
+        )
+        return super().fit(X, y, **kwargs)
+
+
 def build_model():
-    classifier = KerasClassifier(
+    classifier = DynamicKerasClassifier(
         create_model,
         batch_size=2000,
         epochs=4,
-        validation_split=0.05,
+        validation_split=None,
         shuffle=True
     )
 
