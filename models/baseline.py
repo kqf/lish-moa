@@ -50,17 +50,17 @@ def cv_fit(clf, X, y, X_test, cv=None, n_splits=5):
 
         estimators[-1].fit(X_train, y_train)
 
-        train_preds = estimators[-1].predict_proba(X_train)
+        train_preds = estimators[-1].predict(X_train)
         train_preds = np.nan_to_num(train_preds)  # positive class
         loss = log_loss(y_train.reshape(-1), train_preds.reshape(-1))
         losses_train.append(loss)
 
-        val_preds = estimators[-1].predict_proba(X_val)
+        val_preds = estimators[-1].predict(X_val)
         val_preds = np.nan_to_num(val_preds)  # positive class
         loss = log_loss(y_val.reshape(-1), val_preds.reshape(-1))
         losses_valid.append(loss)
 
-        preds = estimators[-1].predict_proba(X_test)
+        preds = estimators[-1].predict(X_test)
         preds = np.nan_to_num(preds)  # positive class
         test_preds += preds / n_splits
 
