@@ -1,5 +1,4 @@
 import pytest
-import numpy as np
 from models.kmlp import build_model, build_preprocessor, cv_fit
 
 
@@ -14,15 +13,11 @@ def test_preprocessor(xy):
 
 
 def test_model(xy):
-    X = xy[0].to_numpy()
-    y = xy[1].to_numpy().astype(np.float32)
-
+    X, y = xy
     model = build_model()
     model.fit(X, y)
 
 
 def test_cv_model(xy):
-    X = xy[0].to_numpy()
-    y = xy[1].to_numpy().astype(np.float32)
-
+    X, y = xy
     cv_fit(build_model(), X, y, X)
