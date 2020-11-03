@@ -139,13 +139,13 @@ def fit(clf, X, y, X_test):
     y_train = y[~ctl_mask]
     clf.fit(X_train, y_train)
 
-    train_preds = clf.predict(X_train)
+    train_preds = clf.predict_proba(X_train)
     train_preds = np.nan_to_num(train_preds)  # positive class
     loss = log_loss(y_train.reshape(-1), train_preds.reshape(-1))
     losses_train.append(loss)
     losses_valid.append(loss)
 
-    test_preds = clf.predict(X_test)
+    test_preds = clf.predict_proba(X_test)
     test_preds = np.nan_to_num(test_preds)  # positive class
     return (
         clf,
