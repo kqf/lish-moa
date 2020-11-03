@@ -123,8 +123,8 @@ def main():
                     ignore_col=None, return_df=True)
 
     clf = build_model()
-    # clfs, losses_train, losses_valid, preds = cv_fit(clf, X, y, X_test)
-    clfs, losses_train, losses_valid, preds = fit(clf, X, y, X_test)
+    clfs, losses_train, losses_valid, preds = cv_fit(clf, X, y, X_test)
+    # clfs, losses_train, losses_valid, preds = fit(clf, X, y, X_test)
 
     msg = "CV losses {} {:.4f} +/- {:.4f}"
     print(msg.format("train", losses_train.mean(), losses_train.std()))
