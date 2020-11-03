@@ -1,3 +1,4 @@
+# <<<<<<<<<<<<
 # The original code was here:
 # https://raw.githubusercontent.com/trent-b/iterative-stratification/master/iterstrat/ml_stratifiers.py
 
@@ -108,3 +109,5 @@ class MultilabelStratifiedKFold(_BaseKFold):
     def split(self, X, y, groups=None):
         y = check_array(y, ensure_2d=False, dtype=None)
         return super(MultilabelStratifiedKFold, self).split(X, y, groups)
+
+# <<<<<<<<<<<<

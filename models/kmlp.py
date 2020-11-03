@@ -17,6 +17,8 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 
+from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
+
 
 class TypeConversion:
     def fit(self, X, y=None):
@@ -121,7 +123,7 @@ def cv_fit(clf, X, y, X_test, cv=None, n_splits=5):
 
         preds = estimators[-1].predict_proba(X_test)
         preds = np.nan_to_num(preds)  # positive class
-        test_preds += preds / n_splits
+        test_preds += preds / cv.n_splits
 
     return (
         estimators,
@@ -158,7 +160,8 @@ def main():
                     ignore_col=None, return_df=True)
 
     clf = build_model()
-    clfs, losses_train, losses_valid, preds = cv_fit(clf, X, y, X_test)
+    cv = MultilabelStratifiedKFold(n_splits=5)
+    clfs, losses_train, losses_valid, preds = cv_fit(clf, X, y, X_test, cv=cv)
 
     msg = "CV losses {} {:.4f} +/- {:.4f}"
     print(msg.format("train", losses_train.mean(), losses_train.std()))
