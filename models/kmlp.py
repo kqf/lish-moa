@@ -17,8 +17,6 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 
-from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
-
 
 class TypeConversion:
     def fit(self, X, y=None):
@@ -133,6 +131,30 @@ def cv_fit(clf, X, y, X_test, cv=None, n_splits=5):
     )
 
 
+def fit(clf, X, y, X_test):
+    losses_train = []
+    losses_valid = []
+    ctl_mask = X[:, 0] == "ctl_vehicle"
+    X_train = X[~ctl_mask, :]
+    y_train = y[~ctl_mask]
+    clf.fit(X_train, y_train)
+
+    train_preds = clf.predict(X_train)
+    train_preds = np.nan_to_num(train_preds)  # positive class
+    loss = log_loss(y_train.reshape(-1), train_preds.reshape(-1))
+    losses_train.append(loss)
+    losses_valid.append(loss)
+
+    test_preds = clf.predict(X_test)
+    test_preds = np.nan_to_num(test_preds)  # positive class
+    return (
+        clf,
+        np.array(losses_train),
+        np.array(losses_valid),
+        test_preds
+    )
+
+
 def read_data(path, ignore_col="sig_id", return_df=False):
     file_path = Path(path)
     if not file_path.is_file():
@@ -160,8 +182,7 @@ def main():
                     ignore_col=None, return_df=True)
 
     clf = build_model()
-    cv = MultilabelStratifiedKFold(n_splits=5)
-    clfs, losses_train, losses_valid, preds = cv_fit(clf, X, y, X_test, cv=cv)
+    clfs, losses_train, losses_valid, preds = fit(clf, X, y, X_test)
 
     msg = "CV losses {} {:.4f} +/- {:.4f}"
     print(msg.format("train", losses_train.mean(), losses_train.std()))
