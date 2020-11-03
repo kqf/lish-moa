@@ -7,6 +7,7 @@ from pathlib import Path
 from sklearn.base import clone, BaseEstimator, ClassifierMixin
 from sklearn.metrics import log_loss
 from sklearn.model_selection import KFold
+from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 
 
 class ConstantClassifier(BaseEstimator, ClassifierMixin):
@@ -62,7 +63,7 @@ def cv_fit(clf, X, y, X_test, cv=None, n_splits=5):
 
         preds = estimators[-1].predict(X_test)
         preds = np.nan_to_num(preds)  # positive class
-        test_preds += preds / n_splits
+        test_preds += preds / cv.n_splits
 
     return (
         estimators,
@@ -123,7 +124,8 @@ def main():
                     ignore_col=None, return_df=True)
 
     clf = build_model()
-    clfs, losses_train, losses_valid, preds = cv_fit(clf, X, y, X_test)
+    cv = MultilabelStratifiedKFold(n_splits=5)
+    clfs, losses_train, losses_valid, preds = cv_fit(clf, X, y, X_test, cv=cv)
     # clfs, losses_train, losses_valid, preds = fit(clf, X, y, X_test)
 
     msg = "CV losses {} {:.4f} +/- {:.4f}"
