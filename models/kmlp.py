@@ -76,7 +76,9 @@ class DynamicKerasClassifier(KerasClassifier):
     def predict_proba(self, X, **kwargs):
         probas = super().predict_proba(X, **kwargs)
         idx, = np.where(self._freqs > 0)
-        probas[:, idx] = self._freqs[idx]
+
+        # NB: Average the labels
+        probas[:, idx] = (probas[:, idx] + self._freqs[idx]) / 2.
         return probas
 
 
