@@ -78,11 +78,15 @@ class DynamicKerasClassifier(KerasClassifier):
             CV losses train 0.0121 +/- 0.0001
             CV losses valid 0.0162 +/- 0.0002
 
+
+            NB: No cut
+            CV losses train 0.0136 +/- 0.0001
+            CV losses valid 0.0166 +/- 0.0001
         """
 
-        cut = 100. / X.shape[0]
+        # cut = 100. / X.shape[0]
         freqs = y.mean(0)
-        self._freqs = (freqs < cut) * freqs
+        self._freqs = freqs  # *  (freqs < cut)
         return super().fit(X, y, **kwargs)
 
     def predict_proba(self, X, **kwargs):
