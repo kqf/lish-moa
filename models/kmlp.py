@@ -67,7 +67,17 @@ class DynamicKerasClassifier(KerasClassifier):
             input_units=X.shape[1],
             output_units=y.shape[1]
         )
+
+        cut = 1. / X.shape[0]
+        freqs = y.mean(0)
+        self._freqs = (freqs > cut) * freqs
         return super().fit(X, y, **kwargs)
+
+    def predict_proba(self, X, **kwargs):
+        probas = super().predict_proba(X, **kwargs)
+        idx, = np.where(self._freqs > 0)
+        probas[:, idx] = self._freqs[idx]
+        return probas
 
 
 def build_model():
