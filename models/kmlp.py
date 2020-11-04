@@ -68,15 +68,43 @@ class DynamicKerasClassifier(KerasClassifier):
             output_units=y.shape[1]
         )
 
-        cut = 50. / X.shape[0]
+        """
+            NB: Improvement with cut = 50
+            CV losses train nan +/- nan
+            CV losses valid 0.0162 +/- 0.0001
+
+
+            NB: Improvement with cut = 100
+            CV losses train 0.0121 +/- 0.0001
+            CV losses valid 0.0162 +/- 0.0002
+
+
+            NB: Improvement with cut = 200
+            CV losses train 0.0123 +/- 0.0000
+            CV losses valid 0.0162 +/- 0.0002
+
+
+            NB: No cut
+            CV losses train 0.0136 +/- 0.0001
+            CV losses valid 0.0166 +/- 0.0001
+
+
+            NB: Cut = 400
+            CV losses train nan +/- nan
+            CV losses valid 0.0164 +/- 0.0001
+        """
+
+        cut = 200. / X.shape[0]
         freqs = y.mean(0)
-        self._freqs = (freqs < cut) * freqs
+        self._freqs = freqs * (freqs < cut)
         return super().fit(X, y, **kwargs)
 
     def predict_proba(self, X, **kwargs):
         probas = super().predict_proba(X, **kwargs)
         idx, = np.where(self._freqs > 0)
-        probas[:, idx] = self._freqs[idx]
+
+        # NB: Average the labels
+        probas[:, idx] = (probas[:, idx] + self._freqs[idx]) / 2.
         return probas
 
 
