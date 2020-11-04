@@ -68,7 +68,19 @@ class DynamicKerasClassifier(KerasClassifier):
             output_units=y.shape[1]
         )
 
-        cut = 50. / X.shape[0]
+        """
+            NB: Improvement with cut = 50
+            CV losses train nan +/- nan
+            CV losses valid 0.0162 +/- 0.0001
+
+
+            NB: Improvement with cut = 100
+            CV losses train 0.0121 +/- 0.0001
+            CV losses valid 0.0162 +/- 0.0002
+
+        """
+
+        cut = 100. / X.shape[0]
         freqs = y.mean(0)
         self._freqs = (freqs < cut) * freqs
         return super().fit(X, y, **kwargs)
