@@ -8,9 +8,10 @@ from category_encoders import CountEncoder
 
 from sklearn.base import clone
 from sklearn.metrics import log_loss
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline, make_union
 from sklearn.model_selection import KFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import QuantileTransformer
 
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras.models import Sequential
@@ -27,10 +28,13 @@ class TypeConversion:
 
 
 class PandasSelector:
-    def __init__(self, cols=None):
+    def __init__(self, cols=None, startswith=None):
         self.cols = cols
+        self.startswith = startswith
 
     def fit(self, X, y=None):
+        if self.cols is None and self.startswith is not None:
+            self.cols = [c for c in X.columns if c.startswith(self.startswith)]
         return self
 
     def transform(self, X, y=None):
@@ -51,7 +55,12 @@ def build_preprocessor():
         TypeConversion(),
     )
 
-    return ce
+    quantiles = make_pipeline(
+        PandasSelector(startswith="c-"),
+        QuantileTransformer(n_quantiles=100, output_distribution="normal")
+    )
+
+    return make_union(ce, quantiles)
 
 
 def create_model(input_units, output_units, hidden_units=512, lr=1e-3):
