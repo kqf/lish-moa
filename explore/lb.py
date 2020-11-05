@@ -6,7 +6,7 @@ def main():
     with open("results.md") as f:
         data = f.read()
 
-    fl = r"\d+\.\d+"
+    fl = r"\d+\.\d+|nan"
     pattern = (
         rf"CV losses train ({fl}) \+\/\- ({fl})\w*\n"
         rf"CV losses valid ({fl}) \+\/\- ({fl})\w*\n"
