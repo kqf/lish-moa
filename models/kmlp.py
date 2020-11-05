@@ -26,8 +26,22 @@ class TypeConversion:
         return X.astype(np.float32)
 
 
+class PandasSelector:
+    def __init__(self, cols=None):
+        self.cols = cols
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        if self.cols is None:
+            return X.to_numpy()
+        return X[self.cols]
+
+
 def build_preprocessor():
     ce = make_pipeline(
+        PandasSelector(),
         CountEncoder(
             cols=(0, 2),
             return_df=False,
@@ -208,7 +222,7 @@ def read_data(path, ignore_col="sig_id", return_df=False):
     if df.shape[1] == 206:
         return df.to_numpy().astype(np.float32)
 
-    return df.to_numpy()
+    return df
 
 
 def main():
