@@ -151,12 +151,12 @@ def cv_fit(clf, X, y, X_test, cv=None, n_splits=5):
         print("Starting fold: ", fn)
 
         estimators.append(clone(clf))
-        X_train, X_val = X[trn_idx], X[val_idx]
+        X_train, X_val = X.iloc[trn_idx], X.iloc[val_idx]
         y_train, y_val = y[trn_idx], y[val_idx]
 
         # drop where cp_type==ctl_vehicle (baseline)
-        ctl_mask = X_train[:, 0] == "ctl_vehicle"
-        X_train = X_train[~ctl_mask, :]
+        ctl_mask = X_train.iloc[:, 0] == "ctl_vehicle"
+        X_train = X_train[~ctl_mask]
         y_train = y_train[~ctl_mask]
 
         estimators[-1].fit(X_train, y_train)
