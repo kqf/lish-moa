@@ -26,8 +26,22 @@ class TypeConversion:
         return X.astype(np.float32)
 
 
+class PandasSelector:
+    def __init__(self, cols=None):
+        self.cols = cols
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        if self.cols is None:
+            return X.to_numpy()
+        return X[self.cols]
+
+
 def build_preprocessor():
     ce = make_pipeline(
+        PandasSelector(),
         CountEncoder(
             cols=(0, 2),
             return_df=False,
@@ -137,12 +151,12 @@ def cv_fit(clf, X, y, X_test, cv=None, n_splits=5):
         print("Starting fold: ", fn)
 
         estimators.append(clone(clf))
-        X_train, X_val = X[trn_idx], X[val_idx]
+        X_train, X_val = X.iloc[trn_idx], X.iloc[val_idx]
         y_train, y_val = y[trn_idx], y[val_idx]
 
         # drop where cp_type==ctl_vehicle (baseline)
-        ctl_mask = X_train[:, 0] == "ctl_vehicle"
-        X_train = X_train[~ctl_mask, :]
+        ctl_mask = X_train.iloc[:, 0] == "ctl_vehicle"
+        X_train = X_train[~ctl_mask]
         y_train = y_train[~ctl_mask]
 
         estimators[-1].fit(X_train, y_train)
@@ -208,7 +222,7 @@ def read_data(path, ignore_col="sig_id", return_df=False):
     if df.shape[1] == 206:
         return df.to_numpy().astype(np.float32)
 
-    return df.to_numpy()
+    return df
 
 
 def main():

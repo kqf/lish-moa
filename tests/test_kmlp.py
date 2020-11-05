@@ -1,5 +1,13 @@
 import pytest
 from models.kmlp import build_model, build_preprocessor, cv_fit
+from models.kmlp import read_data
+
+
+@pytest.fixture
+def xy(size=100):
+    train = read_data("data/train_features.csv")[:size]
+    targets = read_data("data/train_targets_scored.csv")[:size]
+    return train, targets
 
 
 @pytest.mark.skip

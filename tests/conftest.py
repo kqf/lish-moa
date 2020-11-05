@@ -1,5 +1,5 @@
 import pytest
-from models.kmlp import read_data
+from models.baseline import read_data
 
 
 @pytest.fixture
