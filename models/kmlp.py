@@ -12,6 +12,8 @@ from sklearn.pipeline import make_pipeline, make_union
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import QuantileTransformer
+from sklearn.feature_selection import VarianceThreshold
+
 
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras.models import Sequential
@@ -57,18 +59,21 @@ def build_preprocessor():
 
     c_quantiles = make_pipeline(
         PandasSelector(startswith="c-"),
-        QuantileTransformer(n_quantiles=100, output_distribution="normal")
+        QuantileTransformer(n_quantiles=100, output_distribution="normal"),
     )
 
-    # g_quantiles = make_pipeline(
-    #     PandasSelector(startswith="g-"),
-    #     QuantileTransformer(n_quantiles=100, output_distribution="normal")
-    # )
+    g_quantiles = make_pipeline(
+        PandasSelector(startswith="g-"),
+        QuantileTransformer(n_quantiles=100, output_distribution="normal"),
+    )
 
-    final = make_union(
-        ce,
-        c_quantiles,
-        # g_quantiles,
+    final = make_pipeline(
+        make_union(
+            ce,
+            c_quantiles,
+            g_quantiles,
+        ),
+        VarianceThreshold(0.67)
     )
 
     return final
