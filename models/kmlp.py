@@ -55,12 +55,23 @@ def build_preprocessor():
         TypeConversion(),
     )
 
-    quantiles = make_pipeline(
+    c_quantiles = make_pipeline(
         PandasSelector(startswith="c-"),
         QuantileTransformer(n_quantiles=100, output_distribution="normal")
     )
 
-    return make_union(ce, quantiles)
+    # g_quantiles = make_pipeline(
+    #     PandasSelector(startswith="g-"),
+    #     QuantileTransformer(n_quantiles=100, output_distribution="normal")
+    # )
+
+    final = make_union(
+        ce,
+        c_quantiles,
+        # g_quantiles,
+    )
+
+    return final
 
 
 def create_model(input_units, output_units, hidden_units=512, lr=1e-3):
