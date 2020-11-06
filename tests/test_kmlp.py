@@ -22,7 +22,6 @@ def test_preprocessor(xy):
 
 def test_model(xy):
     X, y = xy
-    import ipdb; ipdb.set_trace(); import IPython; IPython.embed() # noqa
     model = build_model()
     model.fit(X, y)
 
