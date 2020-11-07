@@ -1,7 +1,7 @@
 import pytest
 from models.kmlp import build_model, build_preprocessor, cv_fit
 from models.kmlp import read_data
-from models.kmlp import GroupbyNormalizer
+from models.kmlp import GroupbyNormalizer, MeanEncoder
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def test_cv_model(xy):
     cv_fit(build_model(), X, y, X)
 
 
-def test_feature_aggregator(xy):
+def test_groupnormalizer(xy):
     X, y = xy
     model = GroupbyNormalizer("cp_type")
     model.fit(X, y)
@@ -41,3 +41,13 @@ def test_feature_aggregator(xy):
 
     assert normalized.shape[0] == X.shape[0]
     assert normalized.shape[1] == X.shape[1] - 1
+
+
+def test_meanencoder(xy):
+    X, y = xy
+    model = MeanEncoder(["cp_type"])
+    model.fit(X, y)
+
+    normalized = model.transform(X)
+    assert normalized.shape == y.shape
+    print(normalized)

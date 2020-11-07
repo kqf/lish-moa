@@ -73,11 +73,31 @@ class GroupbyNormalizer:
         return (X.drop(columns=self.col) - mu) / sigma
 
 
+class MeanEncoder:
+    def __init__(self, col):
+        self.col = col
+        self.tcols = None
+
+    def fit(self, X, y):
+        self.tcols = [f"t-{i}" for i in range(y.shape[1])]
+
+        df = pd.concat(
+            [X[self.col], pd.DataFrame(y, columns=self.tcols)], axis=1)
+
+        self.means = df.groupby(self.col)[self.tcols].mean()
+        return self
+
+    def transform(self, X):
+        encoded = pd.merge(X[self.col], self.means,
+                           on=self.col).drop(columns=self.col)
+        return encoded
+
+
 def build_preprocessor():
     ce = make_pipeline(
         PandasSelector(),
         CountEncoder(
-            cols=(0, 1, 2),
+            col=(0, 1, 2),
             return_df=False,
             min_group_size=1,  # Makes it possible to clone
         ),
@@ -152,7 +172,7 @@ class DynamicKerasClassifier(KerasClassifier):
         # NB: Average the labels
         # idx, = np.where(self._freqs > 0)
         # probas[:, idx] = (probas[:, idx] + self._freqs[idx]) / 2.
-        return probas
+        return probas.clip(0, 1)
 
 
 def build_model():
