@@ -21,6 +21,15 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
 
+"""
+Features:
+    - "cp_type"
+    - "cp_time"
+    - "cp_dose" (D1, D2)
+    - "g-*" (0-771)
+    - "c-*" (0-99)
+"""
+
 
 class TypeConversion:
     def fit(self, X, y=None):
@@ -48,9 +57,9 @@ class PandasSelector:
 
 def build_preprocessor():
     ce = make_pipeline(
-        PandasSelector(),
+        PandasSelector(["cp_type", "cp_time", "cp_dose"]),
         CountEncoder(
-            cols=(0, 2),
+            # cols=(0, 1, 2),
             return_df=False,
             min_group_size=1,  # Makes it possible to clone
         ),
@@ -75,7 +84,8 @@ def build_preprocessor():
             c_quantiles,
             g_quantiles,
         ),
-        VarianceThreshold(0.67)
+        VarianceThreshold(0.67),
+        StandardScaler(),
     )
 
     final = make_union(
