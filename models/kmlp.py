@@ -12,11 +12,23 @@ from sklearn.pipeline import make_pipeline, make_union
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import QuantileTransformer
+from sklearn.feature_selection import VarianceThreshold
+from sklearn.decomposition import PCA
+
 
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
+
+"""
+Features:
+    - "cp_type"
+    - "cp_time"
+    - "cp_dose" (D1, D2)
+    - "g-*" (0-771)
+    - "c-*" (0-99)
+"""
 
 
 class TypeConversion:
@@ -47,7 +59,7 @@ def build_preprocessor():
     ce = make_pipeline(
         PandasSelector(),
         CountEncoder(
-            cols=(0, 2),
+            cols=(0, 1, 2),
             return_df=False,
             min_group_size=1,  # Makes it possible to clone
         ),
@@ -57,18 +69,28 @@ def build_preprocessor():
 
     c_quantiles = make_pipeline(
         PandasSelector(startswith="c-"),
-        QuantileTransformer(n_quantiles=100, output_distribution="normal")
+        QuantileTransformer(n_quantiles=100, output_distribution="normal"),
+        PCA(n_components=45),
     )
 
-    # g_quantiles = make_pipeline(
-    #     PandasSelector(startswith="g-"),
-    #     QuantileTransformer(n_quantiles=100, output_distribution="normal")
-    # )
+    g_quantiles = make_pipeline(
+        PandasSelector(startswith="g-"),
+        QuantileTransformer(n_quantiles=100, output_distribution="normal"),
+        PCA(n_components=450),
+    )
+
+    pca_features = make_pipeline(
+        make_union(
+            c_quantiles,
+            g_quantiles,
+        ),
+        VarianceThreshold(0.67),
+        StandardScaler(),
+    )
 
     final = make_union(
         ce,
-        c_quantiles,
-        # g_quantiles,
+        pca_features,
     )
 
     return final
@@ -102,43 +124,16 @@ class DynamicKerasClassifier(KerasClassifier):
             output_units=y.shape[1]
         )
 
-        """
-            NB: Improvement with cut = 50
-            CV losses train nan +/- nan
-            CV losses valid 0.0162 +/- 0.0001
-
-
-            NB: Improvement with cut = 100
-            CV losses train 0.0121 +/- 0.0001
-            CV losses valid 0.0162 +/- 0.0002
-
-
-            NB: Improvement with cut = 200
-            CV losses train 0.0123 +/- 0.0000
-            CV losses valid 0.0162 +/- 0.0002
-
-
-            NB: No cut
-            CV losses train 0.0136 +/- 0.0001
-            CV losses valid 0.0166 +/- 0.0001
-
-
-            NB: Cut = 400
-            CV losses train nan +/- nan
-            CV losses valid 0.0164 +/- 0.0001
-        """
-
-        cut = 200. / X.shape[0]
-        freqs = y.mean(0)
-        self._freqs = freqs * (freqs < cut)
+        # cut = 200. / X.shape[0]
+        # freqs = y.mean(0)
+        # self._freqs = freqs * (freqs < cut)
         return super().fit(X, y, **kwargs)
 
     def predict_proba(self, X, **kwargs):
         probas = super().predict_proba(X, **kwargs)
-        idx, = np.where(self._freqs > 0)
-
         # NB: Average the labels
-        probas[:, idx] = (probas[:, idx] + self._freqs[idx]) / 2.
+        # idx, = np.where(self._freqs > 0)
+        # probas[:, idx] = (probas[:, idx] + self._freqs[idx]) / 2.
         return probas
 
 
@@ -256,6 +251,7 @@ def main():
     clf = build_model()
     clfs, losses_train, losses_valid, preds = cv_fit(clf, X, y, X_test)
 
+    print(losses_valid)
     msg = "CV losses {} {:.4f} +/- {:.4f}"
     print(msg.format("train", losses_train.mean(), losses_train.std()))
     print(msg.format("valid", losses_valid.mean(), losses_valid.std()))
