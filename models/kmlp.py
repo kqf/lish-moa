@@ -57,9 +57,9 @@ class PandasSelector:
 
 def build_preprocessor():
     ce = make_pipeline(
-        PandasSelector(["cp_type", "cp_time", "cp_dose"]),
+        PandasSelector(),
         CountEncoder(
-            # cols=(0, 1, 2),
+            cols=(0, 1, 2),
             return_df=False,
             min_group_size=1,  # Makes it possible to clone
         ),
