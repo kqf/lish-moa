@@ -50,4 +50,3 @@ def test_meanencoder(xy):
 
     normalized = model.transform(X)
     assert normalized.shape == y.shape
-    print(normalized)

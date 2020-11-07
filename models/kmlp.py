@@ -53,7 +53,11 @@ class PandasSelector:
     def transform(self, X, y=None):
         if self.cols is None:
             return X.to_numpy()
-        return X[self.cols].drop(columns=self.exclude)
+
+        if self.exclude is not None:
+            X[self.cols].drop(columns=self.exclude)
+
+        return X[self.cols]
 
 
 class GroupbyNormalizer:
