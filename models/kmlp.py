@@ -40,7 +40,7 @@ class TypeConversion:
 
 
 class PandasSelector:
-    def __init__(self, cols=None, startswith=None):
+    def __init__(self, cols=None, startswith=None, exclude=None):
         self.cols = cols
         self.startswith = startswith
 
@@ -52,7 +52,25 @@ class PandasSelector:
     def transform(self, X, y=None):
         if self.cols is None:
             return X.to_numpy()
-        return X[self.cols]
+        return X[self.cols].drop(columns=self.exclude)
+
+
+class GroupbyNormalizer:
+    def __init__(self, col):
+        self.col = col
+
+    def fit(self, X, y=None):
+        gb = X.groupby(self.col)
+        self.means = gb.mean()
+        self.stds = gb.std()
+        return self
+
+    def transform(self, X, y=None):
+        mu = pd.merge(X[self.col], self.means,
+                      on=self.col).drop(columns=self.col)
+        sigma = pd.merge(X[self.col], self.stds,
+                         on=self.col).drop(columns=self.col)
+        return (X.drop(columns=self.col) - mu) / sigma
 
 
 def build_preprocessor():
