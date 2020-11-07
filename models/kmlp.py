@@ -40,9 +40,10 @@ class TypeConversion:
 
 
 class PandasSelector:
-    def __init__(self, cols=None, startswith=None):
+    def __init__(self, cols=None, startswith=None, exclude=None):
         self.cols = cols
         self.startswith = startswith
+        self.exclude = exclude
 
     def fit(self, X, y=None):
         if self.cols is None and self.startswith is not None:
@@ -52,7 +53,49 @@ class PandasSelector:
     def transform(self, X, y=None):
         if self.cols is None:
             return X.to_numpy()
+
+        if self.exclude is not None:
+            X[self.cols].drop(columns=self.exclude)
+
         return X[self.cols]
+
+
+class GroupbyNormalizer:
+    def __init__(self, col):
+        self.col = col
+
+    def fit(self, X, y=None):
+        gb = X.groupby(self.col)
+        self.means = gb.mean()
+        self.stds = gb.std()
+        return self
+
+    def transform(self, X, y=None):
+        mu = pd.merge(X[self.col], self.means,
+                      on=self.col).drop(columns=self.col)
+        sigma = pd.merge(X[self.col], self.stds,
+                         on=self.col).drop(columns=self.col)
+        return (X.drop(columns=self.col) - mu) / sigma
+
+
+class MeanEncoder:
+    def __init__(self, col):
+        self.col = col
+        self.tcols = None
+
+    def fit(self, X, y):
+        self.tcols = [f"t-{i}" for i in range(y.shape[1])]
+
+        df = pd.concat(
+            [X[self.col], pd.DataFrame(y, columns=self.tcols)], axis=1)
+
+        self.means = df.groupby(self.col)[self.tcols].mean()
+        return self
+
+    def transform(self, X):
+        encoded = pd.merge(X[self.col], self.means,
+                           on=self.col).drop(columns=self.col)
+        return encoded
 
 
 def build_preprocessor():
