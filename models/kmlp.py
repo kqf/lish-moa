@@ -43,6 +43,7 @@ class PandasSelector:
     def __init__(self, cols=None, startswith=None, exclude=None):
         self.cols = cols
         self.startswith = startswith
+        self.exclude = exclude
 
     def fit(self, X, y=None):
         if self.cols is None and self.startswith is not None:
@@ -97,7 +98,7 @@ def build_preprocessor():
     ce = make_pipeline(
         PandasSelector(),
         CountEncoder(
-            col=(0, 1, 2),
+            cols=(0, 1, 2),
             return_df=False,
             min_group_size=1,  # Makes it possible to clone
         ),
@@ -172,7 +173,7 @@ class DynamicKerasClassifier(KerasClassifier):
         # NB: Average the labels
         # idx, = np.where(self._freqs > 0)
         # probas[:, idx] = (probas[:, idx] + self._freqs[idx]) / 2.
-        return probas.clip(0, 1)
+        return probas
 
 
 def build_model():
