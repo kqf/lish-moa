@@ -51,11 +51,11 @@ class PandasSelector:
         return self
 
     def transform(self, X, y=None):
+        if self.exclude is not None:
+            return X.drop(columns=self.exclude)
+
         if self.cols is None:
             return X.to_numpy()
-
-        if self.exclude is not None:
-            X[self.cols].drop(columns=self.exclude)
 
         return X[self.cols]
 
@@ -136,11 +136,25 @@ def build_preprocessor():
     )
 
     ce = make_union(
-        MeanEncoder(["cp_type", "cp_time", "cp_dose"])
+        make_pipeline(
+            PandasSelector(exclude=["cp_type"]),
+            MeanEncoder(["cp_time", "cp_dose"]),
+        ),
+        make_pipeline(
+            PandasSelector(exclude=["cp_time"]),
+            MeanEncoder(["cp_type", "cp_dose"]),
+        ),
+        make_pipeline(
+            PandasSelector(exclude=["cp_dose"]),
+            MeanEncoder(["cp_time", "cp_type"]),
+        ),
     )
 
     final = make_union(
-        ce,
+        make_pipeline(
+            ce,
+            StandardScaler(),
+        ),
         pca_features,
     )
 
