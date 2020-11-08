@@ -93,8 +93,12 @@ class MeanEncoder:
         return self
 
     def transform(self, X):
-        encoded = pd.merge(X[self.col], self.means,
-                           on=self.col).drop(columns=self.col)
+        encoded = pd.merge(
+            X[self.col],
+            self.means,
+            on=self.col,
+            how="left"
+        ).drop(columns=self.col)
         return encoded
 
 
@@ -129,6 +133,10 @@ def build_preprocessor():
         ),
         VarianceThreshold(0.67),
         StandardScaler(),
+    )
+
+    ce = make_union(
+        MeanEncoder(["cp_type", "cp_time", "cp_dose"])
     )
 
     final = make_union(
