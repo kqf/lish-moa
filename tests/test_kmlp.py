@@ -34,13 +34,13 @@ def test_cv_model(xy):
 
 def test_groupnormalizer(xy):
     X, y = xy
-    model = GroupbyNormalizer("cp_type")
+    model = GroupbyNormalizer(["cp_type", "cp_dose", "cp_time"])
     model.fit(X, y)
 
     normalized = model.transform(X)
 
     assert normalized.shape[0] == X.shape[0]
-    assert normalized.shape[1] == X.shape[1] - 1
+    assert normalized.shape[1] == X.shape[1] - 3
 
 
 def test_meanencoder(xy):

@@ -71,11 +71,22 @@ class GroupbyNormalizer:
         return self
 
     def transform(self, X, y=None):
-        mu = pd.merge(X[self.col], self.means,
-                      on=self.col, how="left").drop(columns=self.col)
-        sigma = pd.merge(X[self.col], self.stds,
-                         on=self.col, how="left").drop(columns=self.col)
-        return (X.drop(columns=self.col) - mu) / sigma
+        mu = pd.merge(
+            X[self.col],
+            self.means,
+            on=self.col,
+            how="left"
+        ).drop(columns=self.col).values
+
+        sigma = pd.merge(
+            X[self.col],
+            self.stds,
+            on=self.col,
+            how="left"
+        ).drop(columns=self.col).values
+
+        out = (X.drop(columns=self.col).values - mu) / sigma
+        return out
 
 
 class MeanEncoder:
@@ -210,7 +221,7 @@ def build_preprocessor_all_means():
     return final
 
 
-def build_preprocessor():
+def build_preprocessor_no_pca():
     c_features = make_pipeline(
         PandasSelector(startswith="c-"),
         StandardScaler(),
@@ -229,6 +240,19 @@ def build_preprocessor():
     )
 
     final = make_union(ce, gc_features)
+    return final
+
+
+def build_preprocessor():
+    ce = make_pipeline(
+        MeanEncoder(["cp_type", "cp_time", "cp_dose"]),
+        StandardScaler(),
+    )
+
+    final = make_union(
+        ce,
+        GroupbyNormalizer(["cp_type", "cp_time", "cp_dose"]),
+    )
     return final
 
 
