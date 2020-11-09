@@ -137,16 +137,16 @@ def build_preprocessor():
 
     ce = make_union(
         make_pipeline(
-            PandasSelector(exclude=["cp_type"]),
-            MeanEncoder(["cp_time", "cp_dose"]),
+            PandasSelector(exclude=["cp_time", "cp_dose"]),
+            MeanEncoder(["cp_type"]),
         ),
         make_pipeline(
-            PandasSelector(exclude=["cp_time"]),
-            MeanEncoder(["cp_type", "cp_dose"]),
+            PandasSelector(exclude=["cp_type", "cp_dose"]),
+            MeanEncoder(["cp_time"]),
         ),
         make_pipeline(
-            PandasSelector(exclude=["cp_dose"]),
-            MeanEncoder(["cp_time", "cp_type"]),
+            PandasSelector(exclude=["cp_time", "cp_type"]),
+            MeanEncoder(["cp_dose"]),
         ),
     )
 
