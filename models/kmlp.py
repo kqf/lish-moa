@@ -137,7 +137,7 @@ def build_preprocessor_ce():
     return make_union(ce, pca_features)
 
 
-def build_preprocessor():
+def build_preprocessor_all_means():
     c_quantiles = make_pipeline(
         PandasSelector(startswith="c-"),
         QuantileTransformer(n_quantiles=100, output_distribution="normal"),
@@ -207,6 +207,28 @@ def build_preprocessor():
         pca_features,
     )
 
+    return final
+
+
+def build_preprocessor():
+    c_features = make_pipeline(
+        PandasSelector(startswith="c-"),
+        StandardScaler(),
+    )
+
+    g_features = make_pipeline(
+        PandasSelector(startswith="g-"),
+        StandardScaler(),
+    )
+
+    gc_features = make_union(g_features, c_features)
+
+    ce = make_pipeline(
+        MeanEncoder(["cp_type", "cp_time", "cp_dose"]),
+        StandardScaler(),
+    )
+
+    final = make_union(ce, gc_features)
     return final
 
 
