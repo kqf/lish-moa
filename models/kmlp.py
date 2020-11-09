@@ -51,11 +51,11 @@ class PandasSelector:
         return self
 
     def transform(self, X, y=None):
+        if self.exclude is not None:
+            return X.drop(columns=self.exclude)
+
         if self.cols is None:
             return X.to_numpy()
-
-        if self.exclude is not None:
-            X[self.cols].drop(columns=self.exclude)
 
         return X[self.cols]
 
@@ -93,8 +93,12 @@ class MeanEncoder:
         return self
 
     def transform(self, X):
-        encoded = pd.merge(X[self.col], self.means,
-                           on=self.col).drop(columns=self.col)
+        encoded = pd.merge(
+            X[self.col],
+            self.means,
+            on=self.col,
+            how="left"
+        ).drop(columns=self.col)
         return encoded
 
 
@@ -131,8 +135,26 @@ def build_preprocessor():
         StandardScaler(),
     )
 
+    ce = make_union(
+        make_pipeline(
+            PandasSelector(exclude=["cp_time", "cp_dose"]),
+            MeanEncoder(["cp_type"]),
+        ),
+        make_pipeline(
+            PandasSelector(exclude=["cp_type", "cp_dose"]),
+            MeanEncoder(["cp_time"]),
+        ),
+        make_pipeline(
+            PandasSelector(exclude=["cp_time", "cp_type"]),
+            MeanEncoder(["cp_dose"]),
+        ),
+    )
+
     final = make_union(
-        ce,
+        make_pipeline(
+            ce,
+            StandardScaler(),
+        ),
         pca_features,
     )
 
