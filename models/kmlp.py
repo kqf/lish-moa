@@ -102,7 +102,7 @@ class MeanEncoder:
         return encoded
 
 
-def build_preprocessor():
+def build_preprocessor_ce():
     ce = make_pipeline(
         PandasSelector(),
         CountEncoder(
@@ -134,8 +134,32 @@ def build_preprocessor():
         VarianceThreshold(0.67),
         StandardScaler(),
     )
+    return make_union(ce, pca_features)
 
-    ce = make_union(
+
+def build_preprocessor():
+    c_quantiles = make_pipeline(
+        PandasSelector(startswith="c-"),
+        QuantileTransformer(n_quantiles=100, output_distribution="normal"),
+        PCA(n_components=45),
+    )
+
+    g_quantiles = make_pipeline(
+        PandasSelector(startswith="g-"),
+        QuantileTransformer(n_quantiles=100, output_distribution="normal"),
+        PCA(n_components=450),
+    )
+
+    pca_features = make_pipeline(
+        make_union(
+            c_quantiles,
+            g_quantiles,
+        ),
+        VarianceThreshold(0.67),
+        StandardScaler(),
+    )
+
+    ce1 = make_union(
         make_pipeline(
             PandasSelector(exclude=["cp_time", "cp_dose"]),
             MeanEncoder(["cp_type"]),
@@ -150,9 +174,34 @@ def build_preprocessor():
         ),
     )
 
+    ce2 = make_union(
+        make_pipeline(
+            PandasSelector(exclude=["cp_type"]),
+            MeanEncoder(["cp_time", "cp_dose"]),
+        ),
+        make_pipeline(
+            PandasSelector(exclude=["cp_time"]),
+            MeanEncoder(["cp_type", "cp_dose"]),
+        ),
+        make_pipeline(
+            PandasSelector(exclude=["cp_dose"]),
+            MeanEncoder(["cp_time", "cp_type"]),
+        ),
+    )
+
+    ce3 = MeanEncoder(["cp_type", "cp_time", "cp_dose"])
+
     final = make_union(
         make_pipeline(
-            ce,
+            ce1,
+            StandardScaler(),
+        ),
+        make_pipeline(
+            ce2,
+            StandardScaler(),
+        ),
+        make_pipeline(
+            ce3,
             StandardScaler(),
         ),
         pca_features,
