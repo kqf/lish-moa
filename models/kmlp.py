@@ -72,9 +72,9 @@ class GroupbyNormalizer:
 
     def transform(self, X, y=None):
         mu = pd.merge(X[self.col], self.means,
-                      on=self.col).drop(columns=self.col)
+                      on=self.col, how="left").drop(columns=self.col)
         sigma = pd.merge(X[self.col], self.stds,
-                         on=self.col).drop(columns=self.col)
+                         on=self.col, how="left").drop(columns=self.col)
         return (X.drop(columns=self.col) - mu) / sigma
 
 
