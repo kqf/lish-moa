@@ -117,6 +117,20 @@ class MeanEncoder:
         return encoded
 
 
+class BlendingEstimator:
+    def __init__(self, estimators):
+        self.estimators = estimators
+
+    def fit(self, X, y):
+        for estimator in self.estimators:
+            estimator.fit(X, y)
+        return self
+
+    def predict(self, X):
+        preds = [estimator.predict(X) for estimator in self.estimators]
+        return np.mean(preds, axis=0)
+
+
 def build_preprocessor():
     ce = make_pipeline(
         PandasSelector(),
