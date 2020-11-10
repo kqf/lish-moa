@@ -4,7 +4,7 @@ competition = lish-moa
 
 
 local:
-	python models/kmlp.py && echo -e "\a"
+	python models/kmlp.py && echo "\a"
 
 submit:
 	kaggle competitions submit -c $(competition) -f submission.csv -m "$(message)"
