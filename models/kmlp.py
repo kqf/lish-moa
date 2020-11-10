@@ -295,7 +295,8 @@ class DynamicKerasClassifier(KerasClassifier):
         return super().fit(X, y, **kwargs)
 
     def predict_proba(self, X, **kwargs):
-        probas = super().predict_proba(X, **kwargs)
+        # super().predict_proba() is deprecated :/
+        probas = self.model.predict(X, **kwargs)
         # NB: Average the labels
         # idx, = np.where(self._freqs > 0)
         # probas[:, idx] = (probas[:, idx] + self._freqs[idx]) / 2.
