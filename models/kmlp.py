@@ -7,7 +7,7 @@ from functools import partial
 from category_encoders import CountEncoder
 
 from sklearn.base import clone
-from sklearn.metrics import log_loss
+from sklearn.metrics import log_loss as _log_loss
 from sklearn.pipeline import make_pipeline, make_union
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
@@ -29,6 +29,10 @@ Features:
     - "g-*" (0-771)
     - "c-*" (0-99)
 """
+
+
+def log_loss(y_true, y_pred):
+    return _log_loss(y_true, y_pred, eps=1e-3)
 
 
 class TypeConversion:
@@ -113,7 +117,7 @@ class MeanEncoder:
         return encoded
 
 
-def build_preprocessor_ce():
+def build_preprocessor():
     ce = make_pipeline(
         PandasSelector(),
         CountEncoder(
@@ -243,7 +247,7 @@ def build_preprocessor_no_pca():
     return final
 
 
-def build_preprocessor():
+def build_preprocessor_group_norm():
     ce = make_pipeline(
         MeanEncoder(["cp_type", "cp_time", "cp_dose"]),
         StandardScaler(),
@@ -261,6 +265,7 @@ def create_model(input_units, output_units, hidden_units=512, lr=1e-3):
     model.add(
         Dense(hidden_units, activation="relu", input_shape=(input_units,))
     )
+    model.add(Dense(hidden_units // 2, activation="relu"))
     model.add(Dense(output_units, activation="sigmoid"))
     model.compile(
         loss=["binary_crossentropy"],
@@ -290,7 +295,8 @@ class DynamicKerasClassifier(KerasClassifier):
         return super().fit(X, y, **kwargs)
 
     def predict_proba(self, X, **kwargs):
-        probas = super().predict_proba(X, **kwargs)
+        # super().predict_proba() is deprecated :/
+        probas = self.model.predict(X, **kwargs)
         # NB: Average the labels
         # idx, = np.where(self._freqs > 0)
         # probas[:, idx] = (probas[:, idx] + self._freqs[idx]) / 2.
@@ -301,7 +307,7 @@ def build_model():
     classifier = DynamicKerasClassifier(
         create_model,
         batch_size=128,
-        epochs=5,
+        epochs=3,
         validation_split=None,
         shuffle=True
     )
@@ -411,7 +417,9 @@ def main():
     clf = build_model()
     clfs, losses_train, losses_valid, preds = cv_fit(clf, X, y, X_test)
 
-    print(losses_valid)
+    print("train", losses_train)
+    print("valid", losses_valid)
+
     msg = "CV losses {} {:.4f} +/- {:.4f}"
     print(msg.format("train", losses_train.mean(), losses_train.std()))
     print(msg.format("valid", losses_valid.mean(), losses_valid.std()))
