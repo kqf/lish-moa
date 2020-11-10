@@ -6,7 +6,7 @@ from functools import partial
 
 from category_encoders import CountEncoder
 
-from sklearn.base import clone
+from sklearn.base import clone, BaseEstimator, ClassifierMixin
 from sklearn.metrics import log_loss as _log_loss
 from sklearn.pipeline import make_pipeline, make_union
 from sklearn.model_selection import KFold
@@ -117,7 +117,7 @@ class MeanEncoder:
         return encoded
 
 
-class BlendingEstimator:
+class BlendingEstimator(BaseEstimator, ClassifierMixin):
     def __init__(self, estimators):
         self.estimators = estimators
 
@@ -127,7 +127,10 @@ class BlendingEstimator:
         return self
 
     def predict(self, X):
-        preds = [estimator.predict(X) for estimator in self.estimators]
+        return self.predict_proba(X)
+
+    def predict_proba(self, X):
+        preds = [estimator.predict_proba(X) for estimator in self.estimators]
         return np.mean(preds, axis=0)
 
 
@@ -317,7 +320,9 @@ class DynamicKerasClassifier(KerasClassifier):
         return probas
 
 
-def build_model():
+def build_base_model(preprocessor=None):
+    preprocessor = preprocessor or build_preprocessor()
+
     classifier = DynamicKerasClassifier(
         create_model,
         batch_size=128,
@@ -327,11 +332,18 @@ def build_model():
     )
 
     model = make_pipeline(
-        build_preprocessor(),
+        preprocessor,
         classifier,
     )
 
     return model
+
+
+def build_model():
+    clf = BlendingEstimator([
+        build_base_model()
+    ])
+    return clf
 
 
 def cv_fit(clf, X, y, X_test, cv=None, n_splits=5):
