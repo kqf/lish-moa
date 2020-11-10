@@ -265,7 +265,7 @@ def create_model(input_units, output_units, hidden_units=512, lr=1e-3):
     model.add(
         Dense(hidden_units, activation="relu", input_shape=(input_units,))
     )
-    model.add(Dense(hidden_units, activation="relu"))
+    model.add(Dense(hidden_units // 2, activation="relu"))
     model.add(Dense(output_units, activation="sigmoid"))
     model.compile(
         loss=["binary_crossentropy"],
