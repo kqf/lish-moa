@@ -180,14 +180,14 @@ def build_preprocessor_poly():
             return_df=False,
             min_group_size=1,  # Makes it possible to clone
         ),
-        StandardScaler(),
         PolynomialFeatures(),
+        StandardScaler(),
     )
 
     c_features = make_pipeline(
         PandasSelector(startswith="c-"),
-        StandardScaler(),
         PolynomialFeatures(),
+        StandardScaler(),
     )
 
     g_features = make_pipeline(
