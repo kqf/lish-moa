@@ -12,6 +12,7 @@ from sklearn.pipeline import make_pipeline, make_union
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import QuantileTransformer
+from sklearn.preprocessing import PolynomialFeatures
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.decomposition import PCA
 
@@ -43,6 +44,23 @@ class TypeConversion:
 
     def transform(self, X, y=None):
         return X.astype(np.float32)
+
+
+class FixNaTransformer:
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        return np.nan_to_num(X)
+
+
+class ShapeReporter:
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        print("The input shape", X.shape)
+        return X
 
 
 class PandasSelector:
@@ -171,6 +189,42 @@ def build_preprocessor():
     return make_union(ce, pca_features)
 
 
+def build_preprocessor_poly():
+    ce = make_pipeline(
+        PandasSelector(["cp_type", "cp_time", "cp_dose"]),
+        CountEncoder(
+            cols=["cp_type", "cp_time", "cp_dose"],
+            return_df=False,
+            min_group_size=1,  # Makes it possible to clone
+            normalize=True,
+        ),
+    )
+
+    c_features = make_pipeline(
+        PandasSelector(startswith="c-"),
+    )
+
+    g_features = make_pipeline(
+        PandasSelector(startswith="g-"),
+        StandardScaler(),
+    )
+
+    all_features = make_union(
+        make_pipeline(
+            make_union(
+                ce,
+                c_features,
+            ),
+            FixNaTransformer(),
+            PolynomialFeatures(),
+            StandardScaler(),
+        ),
+        g_features,
+    )
+
+    return make_pipeline(all_features, ShapeReporter())
+
+
 def build_preprocessor_all_means():
     c_quantiles = make_pipeline(
         PandasSelector(startswith="c-"),
@@ -289,10 +343,11 @@ def _dense(hidden_units,
     )
 
 
-def create_model(input_units, output_units, hidden_units=512, lr=1e-4):
+def create_model(input_units, output_units, hidden_units=1024, lr=1e-4):
     model = Sequential()
     model.add(_dense(hidden_units, input_shape=(input_units,)))
     model.add(_dense(hidden_units // 2, input_shape=(input_units,)))
+    model.add(_dense(hidden_units // 4, input_shape=(input_units,)))
     model.add(_dense(output_units, activation="softmax"))
     model.compile(
         loss=BinaryCrossentropy(label_smoothing=0.000),
@@ -336,7 +391,7 @@ def build_base_model(preprocessor=None):
     classifier = DynamicKerasClassifier(
         create_model,
         batch_size=128,
-        epochs=10,
+        epochs=6,
         validation_split=None,
         shuffle=True
     )
@@ -351,7 +406,7 @@ def build_base_model(preprocessor=None):
 
 def build_model():
     clf = BlendingEstimator([
-        build_base_model()
+        build_base_model(build_preprocessor_poly())
     ])
     return clf
 
