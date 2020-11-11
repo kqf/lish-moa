@@ -20,6 +20,8 @@ from keras.wrappers.scikit_learn import KerasClassifier
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
+from keras.losses import BinaryCrossentropy
+
 
 """
 Features:
@@ -277,15 +279,16 @@ def build_preprocessor_group_norm():
     return final
 
 
-def create_model(input_units, output_units, hidden_units=512, lr=1e-4):
+def create_model(input_units, output_units, hidden_units=1024, lr=5e-3):
     model = Sequential()
     model.add(
         Dense(hidden_units, activation="relu", input_shape=(input_units,))
     )
     model.add(Dense(hidden_units // 2, activation="relu"))
+    model.add(Dense(hidden_units // 2, activation="relu"))
     model.add(Dense(output_units, activation="sigmoid"))
     model.compile(
-        loss=["binary_crossentropy"],
+        loss=BinaryCrossentropy(label_smoothing=0.001),
         optimizer=Adam(
             lr=lr,
             beta_1=0.9,
@@ -306,17 +309,17 @@ class DynamicKerasClassifier(KerasClassifier):
             output_units=y.shape[1]
         )
 
-        # cut = 200. / X.shape[0]
-        # freqs = y.mean(0)
-        # self._freqs = freqs * (freqs < cut)
+        cut = 200. / X.shape[0]
+        freqs = y.mean(0)
+        self._freqs = freqs * (freqs < cut)
         return super().fit(X, y, **kwargs)
 
     def predict_proba(self, X, **kwargs):
         # super().predict_proba() is deprecated :/
         probas = self.model.predict(X, **kwargs)
         # NB: Average the labels
-        # idx, = np.where(self._freqs > 0)
-        # probas[:, idx] = (probas[:, idx] + self._freqs[idx]) / 2.
+        idx, = np.where(self._freqs > 0)
+        probas[:, idx] = (probas[:, idx] + self._freqs[idx]) / 2.
         return probas
 
 
@@ -325,8 +328,8 @@ def build_base_model(preprocessor=None):
 
     classifier = DynamicKerasClassifier(
         create_model,
-        batch_size=128,
-        epochs=6,
+        batch_size=512,
+        epochs=4,
         validation_split=None,
         shuffle=True
     )
