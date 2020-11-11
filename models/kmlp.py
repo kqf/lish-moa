@@ -277,7 +277,7 @@ def build_preprocessor_group_norm():
     return final
 
 
-def create_model(input_units, output_units, hidden_units=512, lr=1e-3):
+def create_model(input_units, output_units, hidden_units=512, lr=1e-4):
     model = Sequential()
     model.add(
         Dense(hidden_units, activation="relu", input_shape=(input_units,))
@@ -326,7 +326,7 @@ def build_base_model(preprocessor=None):
     classifier = DynamicKerasClassifier(
         create_model,
         batch_size=128,
-        epochs=3,
+        epochs=6,
         validation_split=None,
         shuffle=True
     )
