@@ -18,7 +18,7 @@ from sklearn.decomposition import PCA
 
 from keras.wrappers.scikit_learn import KerasClassifier
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, Dropout
 from keras.optimizers import Adam
 from keras.losses import BinaryCrossentropy
 
@@ -279,16 +279,23 @@ def build_preprocessor_group_norm():
     return final
 
 
-def create_model(input_units, output_units, hidden_units=1024, lr=5e-3):
-    model = Sequential()
-    model.add(
-        Dense(hidden_units, activation="relu", input_shape=(input_units,))
+def _dense(hidden_units,
+           activation="relu", kernel_initializer="glorot_normal", **kwargs):
+    return Dense(
+        hidden_units,
+        activation=activation,
+        kernel_initializer=kernel_initializer,
+        **kwargs
     )
-    model.add(Dense(hidden_units // 2, activation="relu"))
-    model.add(Dense(hidden_units // 2, activation="relu"))
-    model.add(Dense(output_units, activation="sigmoid"))
+
+
+def create_model(input_units, output_units, hidden_units=512, lr=1e-4):
+    model = Sequential()
+    model.add(_dense(hidden_units, input_shape=(input_units,)))
+    model.add(_dense(hidden_units // 2, input_shape=(input_units,)))
+    model.add(_dense(output_units, activation="softmax"))
     model.compile(
-        loss=BinaryCrossentropy(label_smoothing=0.001),
+        loss=BinaryCrossentropy(label_smoothing=0.000),
         optimizer=Adam(
             lr=lr,
             beta_1=0.9,
@@ -328,8 +335,8 @@ def build_base_model(preprocessor=None):
 
     classifier = DynamicKerasClassifier(
         create_model,
-        batch_size=512,
-        epochs=4,
+        batch_size=128,
+        epochs=10,
         validation_split=None,
         shuffle=True
     )
