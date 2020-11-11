@@ -46,6 +46,23 @@ class TypeConversion:
         return X.astype(np.float32)
 
 
+class FixNaTransformer:
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        return np.nan_to_num(X)
+
+
+class ShapeReporter:
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        print("The input shape", X.shape)
+        return X
+
+
 class PandasSelector:
     def __init__(self, cols=None, startswith=None, exclude=None):
         self.cols = cols
@@ -179,15 +196,12 @@ def build_preprocessor_poly():
             cols=["cp_type", "cp_time", "cp_dose"],
             return_df=False,
             min_group_size=1,  # Makes it possible to clone
+            normalize=True,
         ),
-        PolynomialFeatures(),
-        StandardScaler(),
     )
 
     c_features = make_pipeline(
         PandasSelector(startswith="c-"),
-        PolynomialFeatures(),
-        StandardScaler(),
     )
 
     g_features = make_pipeline(
@@ -195,11 +209,20 @@ def build_preprocessor_poly():
         StandardScaler(),
     )
 
-    gc_features = make_union(g_features, c_features)
-    return make_union(
-        # ce,
-        gc_features
+    all_features = make_union(
+        make_pipeline(
+            make_union(
+                ce,
+                c_features,
+            ),
+            FixNaTransformer(),
+            PolynomialFeatures(),
+            StandardScaler(),
+        ),
+        g_features,
     )
+
+    return make_pipeline(all_features, ShapeReporter())
 
 
 def build_preprocessor_all_means():
@@ -368,7 +391,7 @@ def build_base_model(preprocessor=None):
     classifier = DynamicKerasClassifier(
         create_model,
         batch_size=128,
-        epochs=10,
+        epochs=6,
         validation_split=None,
         shuffle=True
     )
