@@ -187,6 +187,7 @@ def build_preprocessor_poly():
     c_features = make_pipeline(
         PandasSelector(startswith="c-"),
         StandardScaler(),
+        PolynomialFeatures(),
     )
 
     g_features = make_pipeline(
@@ -319,10 +320,11 @@ def _dense(hidden_units,
     )
 
 
-def create_model(input_units, output_units, hidden_units=512, lr=1e-4):
+def create_model(input_units, output_units, hidden_units=1024, lr=1e-4):
     model = Sequential()
     model.add(_dense(hidden_units, input_shape=(input_units,)))
     model.add(_dense(hidden_units // 2, input_shape=(input_units,)))
+    model.add(_dense(hidden_units // 4, input_shape=(input_units,)))
     model.add(_dense(output_units, activation="softmax"))
     model.compile(
         loss=BinaryCrossentropy(label_smoothing=0.000),
@@ -366,7 +368,7 @@ def build_base_model(preprocessor=None):
     classifier = DynamicKerasClassifier(
         create_model,
         batch_size=128,
-        epochs=5,
+        epochs=10,
         validation_split=None,
         shuffle=True
     )
