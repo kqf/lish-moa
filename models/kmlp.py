@@ -12,6 +12,7 @@ from sklearn.pipeline import make_pipeline, make_union
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import QuantileTransformer
+from sklearn.preprocessing import PolynomialFeatures
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.decomposition import PCA
 
@@ -169,6 +170,35 @@ def build_preprocessor():
         StandardScaler(),
     )
     return make_union(ce, pca_features)
+
+
+def build_preprocessor_poly():
+    ce = make_pipeline(
+        PandasSelector(["cp_type", "cp_time", "cp_dose"]),
+        CountEncoder(
+            cols=["cp_type", "cp_time", "cp_dose"],
+            return_df=False,
+            min_group_size=1,  # Makes it possible to clone
+        ),
+        StandardScaler(),
+        PolynomialFeatures(),
+    )
+
+    c_features = make_pipeline(
+        PandasSelector(startswith="c-"),
+        StandardScaler(),
+    )
+
+    g_features = make_pipeline(
+        PandasSelector(startswith="g-"),
+        StandardScaler(),
+    )
+
+    gc_features = make_union(g_features, c_features)
+    return make_union(
+        # ce,
+        gc_features
+    )
 
 
 def build_preprocessor_all_means():
@@ -336,7 +366,7 @@ def build_base_model(preprocessor=None):
     classifier = DynamicKerasClassifier(
         create_model,
         batch_size=128,
-        epochs=10,
+        epochs=5,
         validation_split=None,
         shuffle=True
     )
@@ -351,7 +381,7 @@ def build_base_model(preprocessor=None):
 
 def build_model():
     clf = BlendingEstimator([
-        build_base_model()
+        build_base_model(build_preprocessor_poly())
     ])
     return clf
 
