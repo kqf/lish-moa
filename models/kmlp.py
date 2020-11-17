@@ -156,9 +156,9 @@ class BlendingEstimator(BaseEstimator, ClassifierMixin):
 
 def build_preprocessor():
     ce = make_pipeline(
-        PandasSelector(),
+        PandasSelector(["cp_type", "cp_time", "cp_dose"]),
         CountEncoder(
-            cols=(0, 1, 2),
+            cols=["cp_type", "cp_time", "cp_dose"],
             return_df=False,
             min_group_size=1,  # Makes it possible to clone
         ),
