@@ -343,12 +343,11 @@ def _dense(hidden_units,
     )
 
 
-def create_model(input_units, output_units, hidden_units=1024, lr=1e-4):
+def create_model(input_units, output_units, hidden_units=512, lr=1e-3):
     model = Sequential()
     model.add(_dense(hidden_units, input_shape=(input_units,)))
-    model.add(_dense(hidden_units // 2, input_shape=(input_units,)))
-    model.add(_dense(hidden_units // 4, input_shape=(input_units,)))
-    model.add(_dense(output_units, activation="softmax"))
+    model.add(_dense(hidden_units // 2))
+    model.add(_dense(output_units, activation="sigmoid"))
     model.compile(
         loss=BinaryCrossentropy(label_smoothing=0.000),
         optimizer=Adam(
@@ -406,7 +405,11 @@ def build_base_model(preprocessor=None):
 
 def build_model():
     clf = BlendingEstimator([
-        build_base_model(build_preprocessor_poly())
+        build_base_model(),
+        build_base_model(build_preprocessor_poly()),
+        build_base_model(build_preprocessor_no_pca()),
+        build_base_model(build_preprocessor_group_norm()),
+        build_base_model(build_preprocessor_all_means()),
     ])
     return clf
 
