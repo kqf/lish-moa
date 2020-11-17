@@ -13,6 +13,7 @@ from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.preprocessing import PolynomialFeatures
+from sklearn.preprocessing import FunctionTransformer
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.decomposition import PCA
 
@@ -187,6 +188,30 @@ def build_preprocessor():
         StandardScaler(),
     )
     return make_union(ce, pca_features)
+
+
+def build_preprocessor_logs():
+    ce = make_pipeline(
+        PandasSelector(["cp_type", "cp_time", "cp_dose"]),
+        CountEncoder(
+            cols=["cp_type", "cp_time", "cp_dose"],
+            return_df=False,
+            min_group_size=1,  # Makes it possible to clone
+        ),
+        StandardScaler(),
+        TypeConversion(),
+    )
+
+    gc_featuers = make_pipeline(
+        make_union(
+            PandasSelector(startswith="c-"),
+            PandasSelector(startswith="g-"),
+        ),
+        FunctionTransformer(np.log1p),
+        FixNaTransformer(),
+        StandardScaler(),
+    )
+    return make_union(ce, gc_featuers)
 
 
 def build_preprocessor_poly():
@@ -410,6 +435,7 @@ def build_model():
         build_base_model(build_preprocessor_no_pca()),
         build_base_model(build_preprocessor_group_norm()),
         build_base_model(build_preprocessor_all_means()),
+        build_base_model(build_preprocessor_logs()),
     ])
     return clf
 
