@@ -207,7 +207,6 @@ def build_preprocessor_logs():
             PandasSelector(startswith="c-"),
             PandasSelector(startswith="g-"),
         ),
-        FunctionTransformer(np.log1p),
         FixNaTransformer(),
         StandardScaler(),
     )
