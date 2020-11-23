@@ -213,6 +213,29 @@ def build_preprocessor_quantile_uniform():
     return make_union(ce, gc_featuers)
 
 
+def build_preprocessor_quantile_normal():
+    ce = make_pipeline(
+        PandasSelector(["cp_type", "cp_time", "cp_dose"]),
+        CountEncoder(
+            cols=["cp_type", "cp_time", "cp_dose"],
+            return_df=False,
+            min_group_size=1,  # Makes it possible to clone
+        ),
+        StandardScaler(),
+        TypeConversion(),
+    )
+
+    gc_featuers = make_pipeline(
+        make_union(
+            PandasSelector(startswith="c-"),
+            PandasSelector(startswith="g-"),
+        ),
+        QuantileTransformer(output_distribution="normal"),
+        StandardScaler(),
+    )
+    return make_union(ce, gc_featuers)
+
+
 def build_preprocessor_poly():
     ce = make_pipeline(
         PandasSelector(["cp_type", "cp_time", "cp_dose"]),
@@ -435,6 +458,7 @@ def build_model():
         build_base_model(build_preprocessor_group_norm()),
         build_base_model(build_preprocessor_all_means()),
         build_base_model(build_preprocessor_quantile_uniform()),
+        build_base_model(build_preprocessor_quantile_normal()),
     ])
     return clf
 
