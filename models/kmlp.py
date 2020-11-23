@@ -190,7 +190,7 @@ def build_preprocessor():
     return make_union(ce, pca_features)
 
 
-def build_preprocessor_logs():
+def build_preprocessor_quantile_uniform():
     ce = make_pipeline(
         PandasSelector(["cp_type", "cp_time", "cp_dose"]),
         CountEncoder(
@@ -207,7 +207,7 @@ def build_preprocessor_logs():
             PandasSelector(startswith="c-"),
             PandasSelector(startswith="g-"),
         ),
-        FixNaTransformer(),
+        QuantileTransformer(),
         StandardScaler(),
     )
     return make_union(ce, gc_featuers)
@@ -434,7 +434,7 @@ def build_model():
         build_base_model(build_preprocessor_no_pca()),
         build_base_model(build_preprocessor_group_norm()),
         build_base_model(build_preprocessor_all_means()),
-        build_base_model(build_preprocessor_logs()),
+        build_base_model(build_preprocessor_quantile_uniform()),
     ])
     return clf
 
