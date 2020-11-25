@@ -345,7 +345,7 @@ def build_preprocessor_no_pca():
     return final
 
 
-def build_preprocessor_target():
+def build_preprocessor_target_coarse():
     c_features = make_pipeline(
         PandasSelector(startswith="c-"),
         StandardScaler(),
@@ -359,15 +359,14 @@ def build_preprocessor_target():
     gc_features = make_union(g_features, c_features)
 
     ce = make_pipeline(
-        TargetEncoder(
-            cols=["cp_type", "cp_time", "cp_dose"],
-            return_df=False,
-            min_group_size=1,  # Makes it possible to clone
-        ),
+        MeanEncoder(["cp_type", "cp_time", "cp_dose"]),
         StandardScaler(),
     )
 
-    final = make_union(ce, gc_features)
+    final = make_pipeline(
+        make_union(ce, gc_features),
+        QuantileTransformer(n_quantiles=10000),
+    )
     return final
 
 
@@ -463,6 +462,7 @@ def build_model():
         build_base_model(build_preprocessor_all_means()),
         build_base_model(build_preprocessor_quantile_uniform()),
         build_base_model(build_preprocessor_quantile_normal()),
+        build_base_model(build_preprocessor_target_coarse()),
     ])
     return clf
 
