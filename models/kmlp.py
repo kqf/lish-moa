@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 from functools import partial
 
-from category_encoders import CountEncoder
+from category_encoders import CountEncoder, TargetEncoder
 
 from sklearn.base import clone, BaseEstimator, ClassifierMixin
 from sklearn.metrics import log_loss as _log_loss
@@ -338,6 +338,32 @@ def build_preprocessor_no_pca():
 
     ce = make_pipeline(
         MeanEncoder(["cp_type", "cp_time", "cp_dose"]),
+        StandardScaler(),
+    )
+
+    final = make_union(ce, gc_features)
+    return final
+
+
+def build_preprocessor_target():
+    c_features = make_pipeline(
+        PandasSelector(startswith="c-"),
+        StandardScaler(),
+    )
+
+    g_features = make_pipeline(
+        PandasSelector(startswith="g-"),
+        StandardScaler(),
+    )
+
+    gc_features = make_union(g_features, c_features)
+
+    ce = make_pipeline(
+        TargetEncoder(
+            cols=["cp_type", "cp_time", "cp_dose"],
+            return_df=False,
+            min_group_size=1,  # Makes it possible to clone
+        ),
         StandardScaler(),
     )
 
