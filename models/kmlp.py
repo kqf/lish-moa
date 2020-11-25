@@ -191,17 +191,6 @@ def build_preprocessor():
 
 
 def build_preprocessor_quantile_uniform():
-    ce = make_pipeline(
-        PandasSelector(["cp_type", "cp_time", "cp_dose"]),
-        CountEncoder(
-            cols=["cp_type", "cp_time", "cp_dose"],
-            return_df=False,
-            min_group_size=1,  # Makes it possible to clone
-        ),
-        StandardScaler(),
-        TypeConversion(),
-    )
-
     gc_featuers = make_pipeline(
         make_union(
             PandasSelector(startswith="c-"),
@@ -210,7 +199,7 @@ def build_preprocessor_quantile_uniform():
         QuantileTransformer(),
         StandardScaler(),
     )
-    return make_union(ce, gc_featuers)
+    return gc_featuers
 
 
 def build_preprocessor_quantile_normal():
