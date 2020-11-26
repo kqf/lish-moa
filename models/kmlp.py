@@ -440,7 +440,7 @@ def build_base_model(preprocessor=None):
     classifier = DynamicKerasClassifier(
         create_model,
         batch_size=128,
-        epochs=6,
+        epochs=3,
         validation_split=None,
         shuffle=True
     )
