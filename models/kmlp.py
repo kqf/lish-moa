@@ -10,6 +10,7 @@ from sklearn.base import clone, BaseEstimator, ClassifierMixin
 from sklearn.metrics import log_loss as _log_loss
 from sklearn.pipeline import make_pipeline, make_union
 from sklearn.model_selection import KFold
+from sklearn.preprocessing import PowerTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.preprocessing import PolynomialFeatures
@@ -241,6 +242,31 @@ def build_preprocessor_poly():
             ),
             FixNaTransformer(),
             PolynomialFeatures(),
+            StandardScaler(),
+        ),
+        g_features,
+    )
+
+    return make_pipeline(all_features, ShapeReporter())
+
+
+def build_preprocessor_power():
+    c_features = make_pipeline(
+        PandasSelector(startswith="c-"),
+    )
+
+    g_features = make_pipeline(
+        PandasSelector(startswith="g-"),
+        StandardScaler(),
+    )
+
+    all_features = make_union(
+        make_pipeline(
+            make_union(
+                c_features,
+            ),
+            FixNaTransformer(),
+            PowerTransformer(),
             StandardScaler(),
         ),
         g_features,
