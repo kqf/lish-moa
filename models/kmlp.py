@@ -10,6 +10,7 @@ from sklearn.base import clone, BaseEstimator, ClassifierMixin
 from sklearn.metrics import log_loss as _log_loss
 from sklearn.pipeline import make_pipeline, make_union
 from sklearn.model_selection import KFold
+from sklearn.preprocessing import PowerTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.preprocessing import PolynomialFeatures
@@ -249,6 +250,42 @@ def build_preprocessor_poly():
     return make_pipeline(all_features, ShapeReporter())
 
 
+def build_preprocessor_power():
+    ce = make_pipeline(
+        PandasSelector(["cp_type", "cp_time", "cp_dose"]),
+        CountEncoder(
+            cols=["cp_type", "cp_time", "cp_dose"],
+            return_df=False,
+            min_group_size=1,  # Makes it possible to clone
+            normalize=True,
+        ),
+    )
+
+    c_features = make_pipeline(
+        PandasSelector(startswith="c-"),
+    )
+
+    g_features = make_pipeline(
+        PandasSelector(startswith="g-"),
+        StandardScaler(),
+    )
+
+    all_features = make_union(
+        make_pipeline(
+            make_union(
+                ce,
+                c_features,
+            ),
+            FixNaTransformer(),
+            PowerTransformer(),
+            StandardScaler(),
+        ),
+        g_features,
+    )
+
+    return make_pipeline(all_features, ShapeReporter())
+
+
 def build_preprocessor_all_means():
     c_quantiles = make_pipeline(
         PandasSelector(startswith="c-"),
@@ -437,6 +474,7 @@ def build_model():
         build_base_model(build_preprocessor_all_means()),
         build_base_model(build_preprocessor_quantile_uniform()),
         build_base_model(build_preprocessor_quantile_normal()),
+        build_base_model(build_preprocessor_power()),
     ])
     return clf
 
