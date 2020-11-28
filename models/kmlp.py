@@ -371,7 +371,7 @@ def create_model(input_units, output_units, hidden_units=512, lr=1e-3):
     model = Sequential()
     model.add(_dense(hidden_units, input_shape=(input_units,)))
     model.add(_dense(hidden_units // 2))
-    model.add(Dropout(0.7))
+    model.add(Dropout(rate=0.3))
     model.add(_dense(output_units, activation="sigmoid"))
     model.compile(
         loss=BinaryCrossentropy(label_smoothing=0.000),
