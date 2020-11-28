@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 from functools import partial
 
-from category_encoders import CountEncoder, TargetEncoder
+from category_encoders import CountEncoder
 
 from sklearn.base import clone, BaseEstimator, ClassifierMixin
 from sklearn.metrics import log_loss as _log_loss
@@ -13,7 +13,6 @@ from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import QuantileTransformer
 from sklearn.preprocessing import PolynomialFeatures
-from sklearn.preprocessing import FunctionTransformer
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.decomposition import PCA
 
