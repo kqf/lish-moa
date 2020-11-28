@@ -251,6 +251,16 @@ def build_preprocessor_poly():
 
 
 def build_preprocessor_power():
+    ce = make_pipeline(
+        PandasSelector(["cp_type", "cp_time", "cp_dose"]),
+        CountEncoder(
+            cols=["cp_type", "cp_time", "cp_dose"],
+            return_df=False,
+            min_group_size=1,  # Makes it possible to clone
+            normalize=True,
+        ),
+    )
+
     c_features = make_pipeline(
         PandasSelector(startswith="c-"),
     )
@@ -263,6 +273,7 @@ def build_preprocessor_power():
     all_features = make_union(
         make_pipeline(
             make_union(
+                ce,
                 c_features,
             ),
             FixNaTransformer(),
