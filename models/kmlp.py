@@ -474,6 +474,7 @@ def build_model():
         build_base_model(build_preprocessor_all_means()),
         build_base_model(build_preprocessor_quantile_uniform()),
         build_base_model(build_preprocessor_quantile_normal()),
+        build_base_model(build_preprocessor_power()),
     ])
     return clf
 
