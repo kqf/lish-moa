@@ -7,8 +7,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.datasets import make_moons
 from warnings import filterwarnings
 from pymc3.theanof import set_tt_rng, MRG_RandomStreams
-set_tt_rng(MRG_RandomStreams(42))
+from sklearn.exceptions import NotFittedError
 
+set_tt_rng(MRG_RandomStreams(42))
 floatX = theano.config.floatX
 filterwarnings('ignore')
 
@@ -56,17 +57,31 @@ def construct_nn(X, y, hidden_units=5):
     return model
 
 
+class BayesianClassifer:
+    def __init__(self, build_model):
+        self.build_model = build_model
+        self.model = None
+
+    def fit(self, X, y):
+        self.model = self.build_model(X, y)
+        with self.model:
+            inference = pm.ADVI()
+            approx = pm.fit(n=30000, method=inference)
+
+    def predict(self, X):
+        if self.model is None:
+            raise NotFittedError("Please call model.fit(X, y) first")
+
+
 def main():
-    X, Y = make_moons(noise=0.2, random_state=0, n_samples=1000)
+    X, y = make_moons(noise=0.2, random_state=0, n_samples=1000)
     X = scale(X)
     X = X.astype(floatX)
-    Y = Y.astype(floatX)
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=.5)
+    y = y.astype(floatX)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.5)
 
-    model = construct_nn(X_train, Y_train)
-    with model:
-        inference = pm.ADVI()
-        approx = pm.fit(n=30000, method=inference)
+    model = BayesianClassifer(build_model=construct_nn)
+    model.fit(X_train, y_train)
 
 
 if __name__ == '__main__':
