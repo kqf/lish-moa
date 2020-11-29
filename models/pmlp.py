@@ -4,6 +4,7 @@ import theano
 
 from sklearn.preprocessing import scale
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 from sklearn.datasets import make_moons
 from warnings import filterwarnings
 from pymc3.theanof import set_tt_rng, MRG_RandomStreams
@@ -88,14 +89,16 @@ class BayesianClassifer:
     def fit(self, X, y):
         self.model = self.build_model(X, y)
         with self.model:
-            inference = pm.ADVI()
-            self.approx = pm.fit(n=30000, method=inference)
+            self.approx = pm.fit(n=30000, method=pm.ADVI())
             self.sample = create_inference(self.approx, self.model)
 
     def predict_proba(self, X):
         if self.sample is None:
             raise NotFittedError("Please call model.fit(X, y) first")
-        return self.sample(X, 500)
+        return self.sample(X, 500).mean(0)
+
+    def predict(self, X):
+        return self.predict_proba(X) > 0.5
 
 
 def main():
@@ -105,7 +108,8 @@ def main():
 
     model = BayesianClassifer(build_model=construct_nn)
     model.fit(X_train, y_train)
-    model.predict_proba(X_train)
+    print("Train accuracy", accuracy_score(model.predict(X_train), y_train))
+    print("Valid accuracy", accuracy_score(model.predict(X_test), y_test))
 
 
 if __name__ == '__main__':
