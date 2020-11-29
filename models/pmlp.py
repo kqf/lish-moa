@@ -17,13 +17,13 @@ theano.config.compute_test_value = 'off'
 filterwarnings('ignore')
 
 
-def construct_nn(X, y, hidden_units=5):
+def construct_nn(X, y, hidden_units=512):
     nh = hidden_units
 
     # Initialize random weights between each layer
     ifc1 = np.random.randn(X.shape[1], nh).astype(floatX)
     ifc2 = np.random.randn(nh, nh).astype(floatX)
-    ifc3 = np.random.randn(nh).astype(floatX)
+    ifc3 = np.random.randn(nh, y.shape[1]).astype(floatX)
 
     with pm.Model() as model:
         """
@@ -93,7 +93,7 @@ class BayesianClassifer:
     def fit(self, X, y):
         self.model = self.build_model(X, y)
         with self.model:
-            self.approx = pm.fit(n=40000, method=pm.ADVI())
+            self.approx = pm.fit(n=4000, method=pm.ADVI())
             self.sample = create_inference(self.approx, self.model)
 
     def predict_proba(self, X):
