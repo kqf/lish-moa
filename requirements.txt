@@ -11,3 +11,4 @@ matplotlib
 keras
 tensorflow
 iterative-stratification
+pymc3
