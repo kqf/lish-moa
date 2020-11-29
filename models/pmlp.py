@@ -1,14 +1,15 @@
 import numpy as np
 import pymc3 as pm
 import theano
+from pymc3.theanof import set_tt_rng, MRG_RandomStreams
 
 from sklearn.preprocessing import scale
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-from sklearn.datasets import make_moons, make_multilabel_classification
-from warnings import filterwarnings
-from pymc3.theanof import set_tt_rng, MRG_RandomStreams
+from sklearn.datasets import make_multilabel_classification
 from sklearn.exceptions import NotFittedError
+
+from warnings import filterwarnings
 
 set_tt_rng(MRG_RandomStreams(42))
 floatX = theano.config.floatX
@@ -54,7 +55,7 @@ def construct_nn(X, y, hidden_units=5):
         pm.Categorical(
             'out',
             act_out,
-            observed=_output,
+            observed=_output.T,
             # IMPORTANT for minibatches
             total_size=y.shape[0]
         )
