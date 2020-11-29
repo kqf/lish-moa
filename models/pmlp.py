@@ -83,10 +83,12 @@ def create_inference(approx, model):
 
 
 class BayesianClassifer:
-    def __init__(self, build_model):
+    def __init__(self, build_model, inf_samples=512, n=50_000):
         self.build_model = build_model
         self.model = None
         self.sample = None
+        self.n = n
+        self.inf_samples = inf_samples
 
     def fit(self, X, y):
         self.model = self.build_model(X, y)
@@ -97,7 +99,9 @@ class BayesianClassifer:
     def predict_proba(self, X):
         if self.sample is None:
             raise NotFittedError("Please call model.fit(X, y) first")
-        return self.sample(X, 500).mean(0)
+        samples = self.sample(X, self.inf_samples)
+        # Average over inf_samples dimension
+        return samples.mean(0)
 
     def predict(self, X):
         return self.predict_proba(X) > 0.5
