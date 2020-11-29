@@ -11,6 +11,7 @@ from sklearn.exceptions import NotFittedError
 
 set_tt_rng(MRG_RandomStreams(42))
 floatX = theano.config.floatX
+theano.config.compute_test_value = 'off'
 filterwarnings('ignore')
 
 
@@ -30,8 +31,8 @@ def construct_nn(X, y, hidden_units=5):
             Kind-of like a pointer we can redirect.
             For more info, see: http://deeplearning.net/software/theano/library/compile/shared.html
         """  # noqa
-        ann_input = pm.Data('ann_input', X)
-        ann_output = pm.Data('ann_output', y)
+        _input = pm.Data('_input', X)
+        _output = pm.Data('_output', y)
 
         # Weights from input to hidden layer
         f1 = pm.Normal('f1', 0, sigma=1, shape=(X.shape[1], nh), testval=ifc1)
@@ -43,45 +44,68 @@ def construct_nn(X, y, hidden_units=5):
         fc3 = pm.Normal('fc3', 0, sigma=1, shape=(nh,), testval=ifc3)
 
         # Build neural-network using tanh activation function
-        act_1 = pm.math.tanh(pm.math.dot(ann_input, f1))
+        act_1 = pm.math.tanh(pm.math.dot(_input, f1))
         act_2 = pm.math.tanh(pm.math.dot(act_1, fc2))
         act_out = pm.math.sigmoid(pm.math.dot(act_2, fc3))
 
         # Binary classification -> Bernoulli likelihood
-        pm.Bernoulli('out',
-                     act_out,
-                     observed=ann_output,
-                     # IMPORTANT for minibatches
-                     total_size=y.shape[0]
-                     )
+        pm.Bernoulli(
+            'out',
+            act_out,
+            observed=_output,
+            # IMPORTANT for minibatches
+            total_size=y.shape[0]
+        )
+
     return model
+
+
+def create_inference(approx, model):
+    # create symbolic input
+    x = theano.tensor.matrix('X')
+
+    # symbolic number of samples is supported,
+    # we build vectorized posterior on the fly
+    n = theano.tensor.iscalar('n')
+
+    # Do not forget test_values or set
+    _sample_proba = approx.sample_node(
+        model.out.distribution.p,
+        size=n,
+        more_replacements={model['_input']: x})
+    # It is time to compile the function
+    # No updates are needed for Approximation random generator
+    # Efficient vectorized form of sampling is
+    return theano.function([x, n], _sample_proba)
 
 
 class BayesianClassifer:
     def __init__(self, build_model):
         self.build_model = build_model
         self.model = None
+        self.sample = None
 
     def fit(self, X, y):
         self.model = self.build_model(X, y)
         with self.model:
             inference = pm.ADVI()
-            approx = pm.fit(n=30000, method=inference)
+            self.approx = pm.fit(n=30000, method=inference)
+            self.sample = create_inference(self.approx, self.model)
 
-    def predict(self, X):
-        if self.model is None:
+    def predict_proba(self, X):
+        if self.sample is None:
             raise NotFittedError("Please call model.fit(X, y) first")
+        return self.sample(X, 500)
 
 
 def main():
     X, y = make_moons(noise=0.2, random_state=0, n_samples=1000)
     X = scale(X)
-    X = X.astype(floatX)
-    y = y.astype(floatX)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.5)
 
     model = BayesianClassifer(build_model=construct_nn)
     model.fit(X_train, y_train)
+    model.predict_proba(X_train)
 
 
 if __name__ == '__main__':
