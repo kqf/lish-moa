@@ -13,11 +13,13 @@ floatX = theano.config.floatX
 filterwarnings('ignore')
 
 
-def construct_nn(X, y, n_hidden=5):
+def construct_nn(X, y, hidden_units=5):
+    nh = hidden_units
+
     # Initialize random weights between each layer
-    ifc1 = np.random.randn(X.shape[1], n_hidden).astype(floatX)
-    ifc2 = np.random.randn(n_hidden, n_hidden).astype(floatX)
-    ifc3 = np.random.randn(n_hidden).astype(floatX)
+    ifc1 = np.random.randn(X.shape[1], nh).astype(floatX)
+    ifc2 = np.random.randn(nh, nh).astype(floatX)
+    ifc3 = np.random.randn(nh).astype(floatX)
 
     with pm.Model() as model:
         """
@@ -31,18 +33,16 @@ def construct_nn(X, y, n_hidden=5):
         ann_output = pm.Data('ann_output', y)
 
         # Weights from input to hidden layer
-        fc1 = pm.Normal('fc1', 0, sigma=1, shape=(
-            X.shape[1], n_hidden), testval=ifc1)
+        f1 = pm.Normal('f1', 0, sigma=1, shape=(X.shape[1], nh), testval=ifc1)
 
         # Weights from 1st to 2nd layer
-        fc2 = pm.Normal('fc2', 0, sigma=1, shape=(
-            n_hidden, n_hidden), testval=ifc2)
+        fc2 = pm.Normal('fc2', 0, sigma=1, shape=(nh, nh), testval=ifc2)
 
         # Weights from hidden layer to output
-        fc3 = pm.Normal('fc3', 0, sigma=1, shape=(n_hidden,), testval=ifc3)
+        fc3 = pm.Normal('fc3', 0, sigma=1, shape=(nh,), testval=ifc3)
 
         # Build neural-network using tanh activation function
-        act_1 = pm.math.tanh(pm.math.dot(ann_input, fc1))
+        act_1 = pm.math.tanh(pm.math.dot(ann_input, f1))
         act_2 = pm.math.tanh(pm.math.dot(act_1, fc2))
         act_out = pm.math.sigmoid(pm.math.dot(act_2, fc3))
 
