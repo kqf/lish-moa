@@ -17,13 +17,13 @@ theano.config.compute_test_value = 'off'
 filterwarnings('ignore')
 
 
-def construct_nn(X, y, hidden_units=5):
+def construct_nn(X, y, hidden_units=512):
     nh = hidden_units
 
     # Initialize random weights between each layer
     ifc1 = np.random.randn(X.shape[1], nh).astype(floatX)
     ifc2 = np.random.randn(nh, nh).astype(floatX)
-    ifc3 = np.random.randn(nh).astype(floatX)
+    ifc3 = np.random.randn(nh, y.shape[1]).astype(floatX)
 
     with pm.Model() as model:
         """
@@ -47,8 +47,8 @@ def construct_nn(X, y, hidden_units=5):
                         shape=(nh, y.shape[1]), testval=ifc3)
 
         # Build neural-network using tanh activation function
-        act_1 = pm.math.tanh(pm.math.dot(_input, f1))
-        act_2 = pm.math.tanh(pm.math.dot(act_1, fc2))
+        act_1 = theano.tensor.nnet.relu(pm.math.dot(_input, f1))
+        act_2 = theano.tensor.nnet.relu(pm.math.dot(act_1, fc2))
         act_out = pm.math.sigmoid(pm.math.dot(act_2, fc3))
 
         # Binary classification -> Bernoulli likelihood
@@ -93,7 +93,7 @@ class BayesianClassifer:
     def fit(self, X, y):
         self.model = self.build_model(X, y)
         with self.model:
-            self.approx = pm.fit(n=40000, method=pm.ADVI())
+            self.approx = pm.fit(n=self.n, method=pm.ADVI())
             self.sample = create_inference(self.approx, self.model)
 
     def predict_proba(self, X):
@@ -113,7 +113,7 @@ def main():
     X = scale(X)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.5)
 
-    model = BayesianClassifer(build_model=construct_nn)
+    model = BayesianClassifer(build_model=construct_nn, n=1000)
     model.fit(X_train, y_train)
 
     print("Train accuracy", accuracy_score(model.predict(X_train), y_train))
