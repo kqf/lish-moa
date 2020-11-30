@@ -167,7 +167,8 @@ class BayesianClassifer:
     def predict_proba(self, X):
         if self.sample is None:
             raise NotFittedError("Please call model.fit(X, y) first")
-        samples = self.sample(X, self.inf_samples)
+        minibatch_x = pm.Minibatch(X, batch_size=50)
+        samples = self.sample(minibatch_x, self.inf_samples)
         # Average over inf_samples dimension
         return samples.mean(0)
 
