@@ -206,6 +206,7 @@ def build_model():
     model = make_pipeline(
         build_preprocessor(),
         ShapeReporter(),
+        # Something strange is going on when n > 1
         BayesianClassifer(construct_nn, n=1),
     )
     return model
@@ -217,7 +218,7 @@ def main():
     X = scale(X)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.5)
 
-    model = BayesianClassifer(build_model=construct_nn, n=1000)
+    model = BayesianClassifer(build_model=construct_nn, n=100)
     model.fit(X_train, y_train)
 
     print("Train accuracy", accuracy_score(model.predict(X_train), y_train))
