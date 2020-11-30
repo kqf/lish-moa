@@ -40,11 +40,11 @@ def construct_nn(X, y, hidden_units=512):
         f1 = pm.Normal('f1', 0, sigma=1, shape=(X.shape[1], nh), testval=ifc1)
 
         # Weights from 1st to 2nd layer
-        fc2 = pm.Normal('fc2', 0, sigma=1, shape=(nh, nh), testval=ifc2)
+        fc2 = pm.Normal('fc2', 0, sigma=1, shape=(nh, nh // 2), testval=ifc2)
 
         # Weights from hidden layer to output
         fc3 = pm.Normal('fc3', 0, sigma=1,
-                        shape=(nh, y.shape[1]), testval=ifc3)
+                        shape=(nh // 2, y.shape[1]), testval=ifc3)
 
         # Build neural-network using tanh activation function
         act_1 = theano.tensor.nnet.relu(pm.math.dot(_input, f1))
