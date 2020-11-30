@@ -1,8 +1,10 @@
-import numpy as np
-import pymc3 as pm
 import theano
-from pymc3.theanof import set_tt_rng, MRG_RandomStreams
+import pymc3 as pm
+import numpy as np
+import pandas as pd
 
+from pathlib import Path
+from pymc3.theanof import set_tt_rng, MRG_RandomStreams
 from sklearn.preprocessing import scale
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -82,13 +84,14 @@ def build_preprocessor():
     return make_union(ce, pca_features)
 
 
-def construct_nn(X, y, hidden_units=5):
+def construct_nn(X, y, hidden_units=512):
     nh = hidden_units
 
     # Initialize random weights between each layer
     ifc1 = np.random.randn(X.shape[1], nh).astype(floatX)
-    ifc2 = np.random.randn(nh, nh).astype(floatX)
-    ifc3 = np.random.randn(nh, y.shape[1]).astype(floatX)
+
+    ifc2 = np.random.randn(nh, nh // 2).astype(floatX)
+    ifc3 = np.random.randn(nh // 2, y.shape[1]).astype(floatX)
 
     with pm.Model() as model:
         """
@@ -172,10 +175,38 @@ class BayesianClassifer:
         return self.predict_proba(X) > 0.5
 
 
+def read_data(path, ignore_col="sig_id", return_df=False):
+    file_path = Path(path)
+    if not file_path.is_file():
+        file_path = Path("/kaggle/input/lish-moa/") / file_path.name
+
+    df = pd.read_csv(file_path)
+    if ignore_col is not None:
+        df.drop(columns=[ignore_col], inplace=True)
+
+    if return_df:
+        return df
+
+    if df.shape[1] == 206:
+        return df.to_numpy().astype(np.float32)
+
+    return df
+
+
+class ShapeReporter:
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        print("The input shape", X.shape)
+        return X
+
+
 def build_model():
     model = make_pipeline(
         build_preprocessor(),
-        BayesianClassifer(n=10),
+        ShapeReporter(),
+        BayesianClassifer(construct_nn, n=1),
     )
     return model
 
