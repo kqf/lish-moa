@@ -93,7 +93,7 @@ class BayesianClassifer:
     def fit(self, X, y):
         self.model = self.build_model(X, y)
         with self.model:
-            self.approx = pm.fit(n=4000, method=pm.ADVI())
+            self.approx = pm.fit(n=self.n, method=pm.ADVI())
             self.sample = create_inference(self.approx, self.model)
 
     def predict_proba(self, X):
