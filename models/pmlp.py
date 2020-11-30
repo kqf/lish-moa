@@ -8,6 +8,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from sklearn.datasets import make_multilabel_classification
 from sklearn.exceptions import NotFittedError
+from sklearn.pipeline import make_pipeline, make_union
+from category_encoders import CountEncoder
+from sklearn.preprocessing import QuantileTransformer
+from sklearn.preprocessing import StandardScaler
 
 from warnings import filterwarnings
 
@@ -17,7 +21,68 @@ theano.config.compute_test_value = 'off'
 filterwarnings('ignore')
 
 
-def construct_nn(X, y, hidden_units=512):
+class PandasSelector:
+    def __init__(self, cols=None, startswith=None, exclude=None):
+        self.cols = cols
+        self.startswith = startswith
+        self.exclude = exclude
+
+    def fit(self, X, y=None):
+        if self.cols is None and self.startswith is not None:
+            self.cols = [c for c in X.columns if c.startswith(self.startswith)]
+        return self
+
+    def transform(self, X, y=None):
+        if self.exclude is not None:
+            return X.drop(columns=self.exclude)
+
+        if self.cols is None:
+            return X.to_numpy()
+
+        return X[self.cols]
+
+
+class TypeConversion:
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X, y=None):
+        return X.astype(np.float32)
+
+
+def build_preprocessor():
+    ce = make_pipeline(
+        PandasSelector(["cp_type", "cp_time", "cp_dose"]),
+        CountEncoder(
+            cols=["cp_type", "cp_time", "cp_dose"],
+            return_df=False,
+            min_group_size=1,  # Makes it possible to clone
+        ),
+        StandardScaler(),
+        TypeConversion(),
+    )
+
+    c_quantiles = make_pipeline(
+        PandasSelector(startswith="c-"),
+        QuantileTransformer(n_quantiles=100, output_distribution="normal"),
+    )
+
+    g_quantiles = make_pipeline(
+        PandasSelector(startswith="g-"),
+        QuantileTransformer(n_quantiles=100, output_distribution="normal"),
+    )
+
+    pca_features = make_pipeline(
+        make_union(
+            c_quantiles,
+            g_quantiles,
+        ),
+        StandardScaler(),
+    )
+    return make_union(ce, pca_features)
+
+
+def construct_nn(X, y, hidden_units=5):
     nh = hidden_units
 
     # Initialize random weights between each layer
@@ -105,6 +170,14 @@ class BayesianClassifer:
 
     def predict(self, X):
         return self.predict_proba(X) > 0.5
+
+
+def build_model():
+    model = make_pipeline(
+        build_preprocessor(),
+        BayesianClassifer(n=10),
+    )
+    return model
 
 
 def main():
