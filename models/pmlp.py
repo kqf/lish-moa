@@ -151,11 +151,12 @@ def create_inference(approx, model):
 
 
 class BayesianClassifer:
-    def __init__(self, build_model, inf_samples=512, n=50_000):
+    def __init__(self, build_model, inf_samples=512, n=50_000, batch_size=64):
         self.build_model = build_model
         self.model = None
         self.sample = None
         self.n = n
+        self.batch_size = batch_size
         self.inf_samples = inf_samples
 
     def fit(self, X, y):
@@ -167,7 +168,8 @@ class BayesianClassifer:
     def predict_proba(self, X):
         if self.sample is None:
             raise NotFittedError("Please call model.fit(X, y) first")
-        samples = self.sample(X, self.inf_samples)
+        minibatch_x = pm.Minibatch(X, batch_size=self.batch_size)
+        samples = self.sample(minibatch_x, self.inf_samples)
         # Average over inf_samples dimension
         return samples.mean(0)
 
