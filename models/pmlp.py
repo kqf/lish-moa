@@ -47,8 +47,8 @@ def construct_nn(X, y, hidden_units=512):
                         shape=(nh, y.shape[1]), testval=ifc3)
 
         # Build neural-network using tanh activation function
-        act_1 = pm.math.tanh(pm.math.dot(_input, f1))
-        act_2 = pm.math.tanh(pm.math.dot(act_1, fc2))
+        act_1 = theano.tensor.nnet.relu(pm.math.dot(_input, f1))
+        act_2 = theano.tensor.nnet.relu(pm.math.dot(act_1, fc2))
         act_out = pm.math.sigmoid(pm.math.dot(act_2, fc3))
 
         # Binary classification -> Bernoulli likelihood
@@ -113,7 +113,7 @@ def main():
     X = scale(X)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.5)
 
-    model = BayesianClassifer(build_model=construct_nn)
+    model = BayesianClassifer(build_model=construct_nn, n=1000)
     model.fit(X_train, y_train)
 
     print("Train accuracy", accuracy_score(model.predict(X_train), y_train))
